@@ -1,0 +1,37 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Design tokens. Court green on warm neutral; the ball-yellow accent is for
+ * small highlights only. Add a token here, then expose it in
+ * tailwind.config.ts — never use raw colours in components.
+ */
+@layer base {
+  :root {
+    --background: 60 9% 98%;
+    --foreground: 160 14% 10%;
+    --surface: 0 0% 100%;
+    --primary: 158 64% 24%;
+    --primary-foreground: 60 9% 98%;
+    --accent: 66 92% 52%;
+    --accent-foreground: 160 14% 10%;
+    --muted: 60 5% 94%;
+    --muted-foreground: 160 6% 38%;
+    --destructive: 0 72% 45%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 158 64% 30%;
+    --border: 60 5% 87%;
+    --input: 60 5% 80%;
+    --ring: 158 64% 32%;
+    --radius: 6px;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+}

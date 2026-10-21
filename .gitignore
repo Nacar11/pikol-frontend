@@ -1,0 +1,16 @@
+node_modules/
+.next/
+out/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+
+# Environments — only the example is committed.
+.env
+.env.*
+!.env.example
+
+# Working files (plan/todo); committed plans live in ../docs/plans.
+tasks/
+
+.DS_Store
