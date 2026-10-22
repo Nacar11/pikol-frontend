@@ -16,10 +16,14 @@ export function useVenues() {
   });
 }
 
-/** From the cached list (the API has no single-venue read). `undefined`
- * while loading, `'not-found'` once the list is in and the id is not. */
-export function useVenue(id: number): Venue | undefined | 'not-found' {
-  const { data } = useVenues();
-  if (!data) return undefined;
-  return data.data.find((v) => v.id === id) ?? 'not-found';
+/** From the cached list (the API has no single-venue read). `venue` is
+ * `undefined` while loading (or after a failed load, with `error` set), and
+ * `'not-found'` once the list is in and the id is not. */
+export function useVenue(id: number): {
+  venue: Venue | undefined | 'not-found';
+  error: Error | null;
+} {
+  const { data, error } = useVenues();
+  if (!data) return { venue: undefined, error };
+  return { venue: data.data.find((v) => v.id === id) ?? 'not-found', error };
 }

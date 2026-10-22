@@ -27,7 +27,7 @@ function VenueDay() {
   const pathname = usePathname();
   const search = useSearchParams();
   const venueId = Number(params.venueId);
-  const venue = useVenue(venueId);
+  const { venue, error } = useVenue(venueId);
 
   const rawDate = search.get('date');
   const date = rawDate && isManilaDay(rawDate) ? rawDate : null;
@@ -46,6 +46,7 @@ function VenueDay() {
       </section>
     );
   }
+  if (!venue && error) return <Alert tone="error">{errorMessage(error)}</Alert>;
   if (!venue || !date) return <PageLoading />;
 
   return (

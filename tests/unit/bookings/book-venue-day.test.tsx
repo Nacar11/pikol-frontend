@@ -118,6 +118,9 @@ describe('BookVenueDay', () => {
       hours: 2,
     });
     expect(qc.getQueryData(['bookings', 'checkout', 42])).toBe('https://maya.test/c');
+    // The URL must outlive the 15-minute hold, not the default 5-minute gcTime.
+    const cached = qc.getQueryCache().find({ queryKey: ['bookings', 'checkout', 42] });
+    expect(cached?.gcTime).toBeGreaterThanOrEqual(20 * 60_000);
   });
 
   it('toasts SLOT_UNAVAILABLE, clears the selection and refetches the grid', async () => {

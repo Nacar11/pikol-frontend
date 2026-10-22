@@ -84,9 +84,14 @@ export function CheckoutReturn({ bookingId }: { bookingId: number }) {
             We&apos;re still waiting for the payment provider. Your booking will update in My
             Bookings.
           </Alert>
-          <Link href="/bookings" className={LINK}>
-            Go to My bookings
-          </Link>
+          <div className="flex flex-wrap gap-4">
+            <Link href={`/bookings/${booking.id}`} className={LINK}>
+              View booking
+            </Link>
+            <Link href="/bookings" className={LINK}>
+              Go to My bookings
+            </Link>
+          </div>
         </section>
       ) : (
         <Confirming />

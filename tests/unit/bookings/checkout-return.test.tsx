@@ -193,6 +193,11 @@ describe('checkout return page', () => {
       'href',
       '/bookings',
     );
+    // A player who backed out of Maya can go back to Pay.
+    expect(screen.getByRole('link', { name: 'View booking' })).toHaveAttribute(
+      'href',
+      '/bookings/7',
+    );
     const calls = get.mock.calls.length;
     expect(calls).toBeGreaterThan(5);
     await advance(10_000);

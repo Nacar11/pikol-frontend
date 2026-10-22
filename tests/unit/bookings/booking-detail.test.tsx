@@ -201,10 +201,12 @@ describe('BookingDetail', () => {
 
   it('calls checkout once when no URL is cached, then redirects', async () => {
     checkout.mockResolvedValue({ ...booking(), checkout_url: 'https://maya.test/new' });
-    setup();
+    const { qc } = setup();
     await userEvent.click(await screen.findByRole('button', { name: 'Pay ₱1,320' }));
     await waitFor(() => expect(navigateExternal).toHaveBeenCalledWith('https://maya.test/new'));
     expect(checkout).toHaveBeenCalledTimes(1);
+    const cached = qc.getQueryCache().find({ queryKey: ['bookings', 'checkout', 42] });
+    expect(cached?.gcTime).toBeGreaterThanOrEqual(20 * 60_000);
   });
 
   it('refetches the booking when checkout says HOLD_NOT_LIVE', async () => {
