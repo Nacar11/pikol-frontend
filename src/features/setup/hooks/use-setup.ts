@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { adminBookingKeys, adminBookingsApi, type AdminBooking } from '@/features/admin-bookings';
 import { availabilityKeys } from '@/features/availability';
@@ -148,16 +149,18 @@ export function useDayPrices(courtId: number, date: string) {
 }
 
 /** Closures are booking rows: there is no closures list route (ADR 0001). */
-function closureParams(venueId: number) {
+function closureParams(venueId: number, endsAfter: string) {
   return {
     venue_id: venueId,
     type: 'MAINTENANCE',
     booking_status: 'CONFIRMED',
+    ends_after: endsAfter,
     limit: 200,
   };
 }
 
-/** Upcoming and current closures by start. The server also returns ended ones. */
+/** Upcoming and current closures by start. The server already drops ended
+ * ones (`ends_after`); the filter guards a page fetched a while ago. */
 function upcoming(rows: AdminBooking[]): AdminBooking[] {
   const now = Date.now();
   return rows
@@ -167,7 +170,9 @@ function upcoming(rows: AdminBooking[]): AdminBooking[] {
 
 export function useClosures(venueId: number) {
   const { status } = useAuth();
-  const params = closureParams(venueId);
+  // Fixed at mount so the query key stays stable across renders.
+  const [endsAfter] = useState(() => new Date().toISOString());
+  const params = closureParams(venueId, endsAfter);
   return useQuery({
     queryKey: adminBookingKeys.list(params),
     queryFn: () => adminBookingsApi.list(params),

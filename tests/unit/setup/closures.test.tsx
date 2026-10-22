@@ -232,6 +232,7 @@ describe('ClosureList', () => {
       venue_id: 2,
       type: 'MAINTENANCE',
       booking_status: 'CONFIRMED',
+      ends_after: NOW.toISOString(),
       limit: 200,
     });
   });
