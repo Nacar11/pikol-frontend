@@ -4,3 +4,5 @@ export type { Booking, DisplayStatus } from './schemas';
 export { BookingDetail, BookingNotFound } from './components/booking-detail';
 export { CheckoutNotFound, CheckoutReturn } from './components/checkout-return';
 export { MyBookings } from './components/my-bookings';
+export { BookingSchema } from './schemas';
+export { StatusBadge } from './components/status-badge';

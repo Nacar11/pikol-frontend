@@ -1,0 +1,9 @@
+import type { ListParams } from './schemas';
+
+export const adminBookingKeys = {
+  all: ['admin-bookings'] as const,
+  day: (venueId: number, date: string) => [...adminBookingKeys.all, 'day', venueId, date] as const,
+  detail: (id: number) => [...adminBookingKeys.all, 'detail', id] as const,
+  unfulfilled: () => [...adminBookingKeys.all, 'unfulfilled'] as const,
+  list: (params: ListParams) => [...adminBookingKeys.all, 'list', params] as const,
+};

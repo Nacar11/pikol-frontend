@@ -1,7 +1,7 @@
 import { cn } from '@/lib/cn';
 import { formatHour } from '@/lib/manila';
 import { formatPeso } from '@/lib/money';
-import type { Availability, GridSlot } from '../schemas';
+import type { Availability, GridSlot, GridStatus } from '../schemas';
 import type { Selection } from '../selection';
 
 type Props = {
@@ -9,13 +9,15 @@ type Props = {
   selection: Selection | null;
   /** Without it the grid is read-only: no cell is a button. */
   onCellTap?: (courtId: number, index: number) => void;
+  /** Staff also open `PAST` cells (free, but too soon for a player). */
+  selectable?: (status: GridStatus) => boolean;
 };
 
 const CELL = 'flex h-11 w-full items-center justify-center text-sm';
 
 /** Purely presentational: hours down, courts across. Selection is rendered,
  * never decided, here. */
-export function AvailabilityGrid({ data, selection, onCellTap }: Props) {
+export function AvailabilityGrid({ data, selection, onCellTap, selectable }: Props) {
   const first = data.courts[0];
   if (!first) {
     return <p className="text-sm text-muted-foreground">This venue has no courts yet.</p>;
@@ -62,6 +64,7 @@ export function AvailabilityGrid({ data, selection, onCellTap }: Props) {
                           i >= selection.start &&
                           i <= selection.end
                         }
+                        openPast={selectable?.('PAST') ?? false}
                         onTap={onCellTap && (() => onCellTap(court.court_id, i))}
                       />
                     )}
@@ -80,11 +83,13 @@ function Cell({
   court,
   slot,
   selected,
+  openPast,
   onTap,
 }: {
   court: string;
   slot: GridSlot;
   selected: boolean;
+  openPast: boolean;
   onTap?: () => void;
 }) {
   const where = `${court}, ${formatHour(slot.starts_at)}`;
@@ -101,7 +106,7 @@ function Cell({
       </div>
     );
   }
-  if (slot.status === 'PAST') {
+  if (slot.status === 'PAST' && !openPast) {
     return (
       <div
         role="img"
