@@ -16,7 +16,7 @@ vi.mock('@/features/admin-bookings/api', () => ({
   adminBookingsApi: { list: vi.fn(), reopenClosure: vi.fn() },
 }));
 vi.mock('@/features/auth/api', () => ({ authApi: { permissions: vi.fn() } }));
-vi.mock('@/features/catalog/api', () => ({ catalogApi: { venues: vi.fn() } }));
+vi.mock('@/features/catalog/api', () => ({ catalogApi: { venues: vi.fn(), courts: vi.fn() } }));
 vi.mock('next/navigation', async () => ({
   ...(await import('../auth/render')).navigationMock,
   usePathname: () => '/staff/closures',
@@ -77,7 +77,11 @@ function renderPage(permissions = ['CLOSURE:Manage']) {
 beforeEach(() => {
   vi.clearAllMocks();
   setSearch('venue=2');
-  api.courts.mockResolvedValue(courtPage as never);
+  // The admin courts route needs COURT:Manage; the closure form must not use it.
+  api.courts.mockRejectedValue(
+    new ApiError(403, { detail: 'Forbidden', code: 'FORBIDDEN', request_id: 'r' }),
+  );
+  vi.mocked(catalogApi.courts).mockResolvedValue(courtPage as never);
   bookings.list.mockResolvedValue(bookingPage([]) as never);
 });
 afterEach(() => vi.useRealTimers());
@@ -108,6 +112,30 @@ describe('ClosureForm', () => {
         reason: 'Resurfacing',
       }),
     );
+  });
+
+  it('lets venue staff (CLOSURE:Manage, no COURT:Manage) pick courts and close them', async () => {
+    const u = userEvent.setup();
+    api.closeCourts.mockResolvedValue([] as never);
+    renderPage(['CLOSURE:Manage', 'BOOKING:ReadAny']);
+    await u.click(await screen.findByLabelText('Court 1'));
+    expect(screen.getByLabelText('Court 2')).toBeInTheDocument();
+    await fill('2026-10-23', '22', '2026-10-24', '2');
+    await u.type(screen.getByLabelText('Reason'), 'Nets');
+    await u.click(screen.getByRole('button', { name: 'Close courts' }));
+    await waitFor(() =>
+      expect(api.closeCourts).toHaveBeenCalledWith(expect.objectContaining({ court_ids: [1] })),
+    );
+    expect(catalogApi.courts).toHaveBeenCalledWith(2);
+    expect(api.courts).not.toHaveBeenCalled();
+  });
+
+  it('renders the courts query error', async () => {
+    vi.mocked(catalogApi.courts).mockRejectedValue(
+      new ApiError(404, { detail: 'Venue not found.', code: 'NOT_FOUND', request_id: 'r' }),
+    );
+    renderPage();
+    expect(await screen.findByText('Venue not found.')).toBeInTheDocument();
   });
 
   it('Select all checks every active court', async () => {

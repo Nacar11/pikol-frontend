@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { errorCode, errorMessage } from '@/lib/api-error';
 import { formatHourOfDay, manilaInstant, manilaToday } from '@/lib/manila';
-import { useAdminCourts, useCloseCourts } from '../hooks/use-setup';
+import { useCourts } from '@/features/catalog';
+import { useCloseCourts } from '../hooks/use-setup';
 
 const HOURS = Array.from({ length: 24 }, (_, h) => h);
 
@@ -21,7 +22,7 @@ function serverMessage(err: unknown): string {
 }
 
 export function ClosureForm({ venueId }: { venueId: number }) {
-  const { data } = useAdminCourts(venueId);
+  const { data, isError, error } = useCourts(venueId);
   const close = useCloseCourts();
   const today = manilaToday();
   const [courtIds, setCourtIds] = useState<number[]>([]);
@@ -122,6 +123,7 @@ export function ClosureForm({ venueId }: { venueId: number }) {
         <Label htmlFor="closure-reason">Reason</Label>
         <Input id="closure-reason" value={reason} onChange={(e) => setReason(e.target.value)} />
       </div>
+      {isError && <Alert tone="error">{errorMessage(error)}</Alert>}
       {problem && <Alert tone="error">{problem}</Alert>}
       {close.isError && <Alert tone="error">{serverMessage(close.error)}</Alert>}
       <Button type="submit" loading={close.isPending}>

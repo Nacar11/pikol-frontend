@@ -63,6 +63,7 @@ function useInvalidateCourts(venueId: number) {
   const qc = useQueryClient();
   return () => {
     void qc.invalidateQueries({ queryKey: setupKeys.courts(venueId) });
+    void qc.invalidateQueries({ queryKey: catalogKeys.courts(venueId) });
     void qc.invalidateQueries({ queryKey: availabilityKeys.all });
   };
 }
