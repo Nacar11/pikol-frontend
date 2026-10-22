@@ -78,10 +78,15 @@ export function useCreateCourt(venueId: number) {
 }
 
 export function useUpdateCourt(venueId: number) {
+  const qc = useQueryClient();
   const invalidate = useInvalidateCourts(venueId);
   return useMutation({
     mutationFn: (v: { id: number; body: CourtUpdate }) => setupApi.updateCourt(v.id, v.body),
-    onSuccess: invalidate,
+    onSuccess: (_row, v) => {
+      invalidate();
+      // The pricing page header reads the single court.
+      void qc.invalidateQueries({ queryKey: setupKeys.court(v.id) });
+    },
   });
 }
 

@@ -1,10 +1,13 @@
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { QueryClient } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { authApi } from '@/features/auth/api';
 import { catalogApi } from '@/features/catalog/api';
+import { catalogKeys } from '@/features/catalog/keys';
 import { CourtAdmin } from '@/features/setup';
 import { setupApi } from '@/features/setup/api';
+import { setupKeys } from '@/features/setup/keys';
 import { ApiError } from '@/lib/api-client';
 import { renderWithAuth, setSearch } from '../auth/render';
 
@@ -115,6 +118,22 @@ describe('CourtAdmin', () => {
     await waitFor(() =>
       expect(api.updateCourt).toHaveBeenCalledWith(1, { name: 'Centre', sort_order: 7 }),
     );
+  });
+
+  it('a rename also refreshes the single court and the catalog courts', async () => {
+    const u = userEvent.setup();
+    const invalidate = vi.spyOn(QueryClient.prototype, 'invalidateQueries');
+    api.courts.mockResolvedValue(page([court(1, 1)]) as never);
+    api.updateCourt.mockResolvedValue(court(1, 1, { name: 'Centre' }) as never);
+    setup();
+    await u.click(await screen.findByRole('button', { name: 'Edit Court 1' }));
+    const name = screen.getByLabelText('Court 1 name');
+    await u.clear(name);
+    await u.type(name, 'Centre');
+    await u.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(invalidate).toHaveBeenCalledWith({ queryKey: setupKeys.court(1) }));
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: catalogKeys.courts(2) });
+    invalidate.mockRestore();
   });
 
   it('renders a 422 detail', async () => {
