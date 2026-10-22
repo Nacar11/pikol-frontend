@@ -18,7 +18,6 @@ export function ResolutionQueue() {
   const canResolve = (usePermissions().data ?? []).includes('BOOKING:CancelAny');
   const resolve = useResolve();
   const [openId, setOpenId] = useState<number | null>(null);
-  const [failedId, setFailedId] = useState<number | null>(null);
 
   if (!data) return error ? <Alert tone="error">{errorMessage(error)}</Alert> : <PageLoading />;
 
@@ -28,6 +27,8 @@ export function ResolutionQueue() {
     <section className="space-y-4">
       <h1 className="text-xl font-semibold">To resolve</h1>
       {error && <Alert tone="error">{errorMessage(error)}</Alert>}
+      {/* Queue level: a refetch can drop the row this error is about. */}
+      {resolve.isError && <Alert tone="error">{errorMessage(resolve.error)}</Alert>}
       {bookings.length === 0 ? (
         <p className="text-muted-foreground">
           Nothing to resolve. Every paid booking has its court.
@@ -55,9 +56,6 @@ export function ResolutionQueue() {
                 <StatusBadge status={b.display_status} payment={b.payment_status} />
               </p>
               {b.notes && <p className="text-sm">{b.notes}</p>}
-              {failedId === b.id && resolve.isError && (
-                <Alert tone="error">{errorMessage(resolve.error)}</Alert>
-              )}
               {canResolve &&
                 (openId === b.id ? (
                   <ReasonForm
@@ -65,7 +63,6 @@ export function ResolutionQueue() {
                     submitLabel="Resolve"
                     pending={resolve.isPending}
                     onSubmit={(resolution) => {
-                      setFailedId(b.id);
                       resolve.mutate({ id: b.id, resolution });
                     }}
                   />

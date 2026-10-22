@@ -81,7 +81,7 @@ describe('ResolutionQueue', () => {
       '/staff/bookings/1',
     );
     expect(screen.getAllByText('Riverside · Court 2')).toHaveLength(2);
-    expect(screen.getAllByText(/620/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText('₱620')).toHaveLength(2);
   });
 
   it('requires text, posts the resolution and removes the row', async () => {
@@ -107,16 +107,25 @@ describe('ResolutionQueue', () => {
 
   it('renders the server detail on NOT_FLAGGED and refetches', async () => {
     const u = userEvent.setup();
-    api.unfulfilled.mockResolvedValue(page([booking(1)]));
-    api.resolve.mockRejectedValue(
-      new ApiError(409, { detail: 'Booking is not flagged', code: 'NOT_FLAGGED', request_id: 'r' }),
-    );
+    api.unfulfilled.mockResolvedValueOnce(page([booking(1)]));
+    api.resolve.mockImplementation(() => {
+      // The real server's refetch drops the row: it is no longer flagged.
+      api.unfulfilled.mockResolvedValue(page([]));
+      return Promise.reject(
+        new ApiError(409, {
+          detail: 'Booking is not flagged',
+          code: 'NOT_FLAGGED',
+          request_id: 'r',
+        }),
+      );
+    });
     setup();
     await u.click(await screen.findByRole('button', { name: 'Resolve' }));
     await u.type(screen.getByRole('textbox'), 'Voided');
     await u.click(screen.getByRole('button', { name: 'Resolve' }));
-    expect(await screen.findByText('Booking is not flagged')).toBeInTheDocument();
     await waitFor(() => expect(api.unfulfilled).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(screen.queryByText(/court taken 1/)).not.toBeInTheDocument());
+    expect(screen.getByText('Booking is not flagged')).toBeInTheDocument();
   });
 
   it('loads more pages', async () => {
