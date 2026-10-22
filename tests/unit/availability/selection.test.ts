@@ -119,3 +119,30 @@ describe('subtotalCentavos', () => {
     expect(subtotalCentavos({ court_id: 1, start: 1, end: 2 }, grid())).toBe(50100 + 50200);
   });
 });
+
+describe('staff selectable predicate', () => {
+  const staff = (s: GridSlot['status']) => s === 'AVAILABLE' || s === 'PAST';
+
+  it('selects a PAST cell for staff and ignores it by default', () => {
+    expect(tapCell(null, grid({ 3: 'PAST' }), 1, 3, staff)).toEqual({
+      court_id: 1,
+      start: 3,
+      end: 3,
+    });
+    expect(tapCell(null, grid({ 3: 'PAST' }), 1, 3)).toBeNull();
+  });
+
+  it('extends a span across PAST and AVAILABLE for staff only', () => {
+    const g = grid({ 3: 'PAST' });
+    const sel = { court_id: 1, start: 3, end: 3 };
+    expect(tapCell(sel, g, 1, 4, staff)).toEqual({ court_id: 1, start: 3, end: 4 });
+    expect(tapCell(sel, g, 1, 4)).toEqual({ court_id: 1, start: 4, end: 4 });
+  });
+
+  it('reconcile keeps a PAST span for staff and drops it by default', () => {
+    const g = grid({ 3: 'PAST' });
+    const sel = { court_id: 1, start: 3, end: 4 };
+    expect(reconcile(sel, g, staff)).toEqual(sel);
+    expect(reconcile(sel, g)).toBeNull();
+  });
+});

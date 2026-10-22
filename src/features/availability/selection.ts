@@ -1,4 +1,4 @@
-import type { Availability, GridCourt } from './schemas';
+import type { Availability, GridCourt, GridStatus } from './schemas';
 
 /** A run of consecutive slots on one court; `start`/`end` are inclusive
  * indexes into that court's 24 slots. */
@@ -10,9 +10,19 @@ function courtOf(grid: Availability, courtId: number): GridCourt | undefined {
   return grid.courts.find((c) => c.court_id === courtId);
 }
 
-function allAvailable(court: GridCourt, from: number, to: number): boolean {
+/** Players select only free cells; staff also select `PAST` (free but too
+ * soon for a player), which is the walk-in-now case. */
+const defaultSelectable = (s: GridStatus): boolean => s === 'AVAILABLE';
+
+function allSelectable(
+  court: GridCourt,
+  from: number,
+  to: number,
+  selectable: (s: GridStatus) => boolean,
+): boolean {
   for (let i = from; i <= to; i++) {
-    if (court.slots[i]?.status !== 'AVAILABLE') return false;
+    const slot = court.slots[i];
+    if (!slot || !selectable(slot.status)) return false;
   }
   return true;
 }
@@ -23,9 +33,11 @@ export function tapCell(
   grid: Availability,
   courtId: number,
   index: number,
+  selectable: (s: GridStatus) => boolean = defaultSelectable,
 ): Selection | null {
   const court = courtOf(grid, courtId);
-  if (court?.slots[index]?.status !== 'AVAILABLE') return sel;
+  const slot = court?.slots[index];
+  if (!court || !slot || !selectable(slot.status)) return sel;
 
   const fresh = { court_id: courtId, start: index, end: index };
   if (!sel || sel.court_id !== courtId) return fresh;
@@ -33,7 +45,7 @@ export function tapCell(
   if (
     index > sel.end &&
     index - sel.start + 1 <= MAX_HOURS &&
-    allAvailable(court, sel.start, index)
+    allSelectable(court, sel.start, index, selectable)
   ) {
     return { ...sel, end: index };
   }
@@ -41,10 +53,14 @@ export function tapCell(
 }
 
 /** Drops a selection that a fresh grid no longer supports. */
-export function reconcile(sel: Selection | null, grid: Availability): Selection | null {
+export function reconcile(
+  sel: Selection | null,
+  grid: Availability,
+  selectable: (s: GridStatus) => boolean = defaultSelectable,
+): Selection | null {
   if (!sel) return null;
   const court = courtOf(grid, sel.court_id);
-  if (!court || !allAvailable(court, sel.start, sel.end)) return null;
+  if (!court || !allSelectable(court, sel.start, sel.end, selectable)) return null;
   return sel;
 }
 

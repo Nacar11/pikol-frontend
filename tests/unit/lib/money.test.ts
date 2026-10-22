@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatCountdown, formatPeso } from '@/lib/money';
+import { formatCountdown, formatPeso, parsePesos } from '@/lib/money';
 
 describe('money', () => {
   it('formats whole pesos without decimals', () => {
@@ -14,5 +14,24 @@ describe('money', () => {
     expect(formatCountdown(899_999)).toBe('14:59');
     expect(formatCountdown(-5)).toBe('0:00');
     expect(formatCountdown(0)).toBe('0:00');
+  });
+});
+
+describe('parsePesos', () => {
+  it('returns integer centavos', () => {
+    expect(parsePesos('600')).toBe(60000);
+    expect(parsePesos('600.5')).toBe(60050);
+    expect(parsePesos('600.05')).toBe(60005);
+    expect(parsePesos('1,200')).toBe(120000);
+    expect(parsePesos('₱1,200.75')).toBe(120075);
+    expect(parsePesos('  0  ')).toBe(0);
+    expect(parsePesos('19.99')).toBe(1999);
+    expect(parsePesos('.5')).toBe(50);
+  });
+
+  it('rejects anything else', () => {
+    for (const bad of ['600.505', 'abc', '-1', '', '   ', '₱', '1.2.3', '12abc', '1e3', '-0']) {
+      expect(parsePesos(bad), bad).toBeNull();
+    }
   });
 });

@@ -108,3 +108,17 @@ export function formatDateTime(iso: string): string {
   });
   return `${p.day} ${p.month}, ${p.hour}:${p.minute} ${meridiem(p.dayPeriod)}`;
 }
+
+/** "6 PM" for hour index 18 (0 → "12 AM", 12 → "12 PM"). */
+export function formatHourOfDay(hour: number): string {
+  if (!Number.isInteger(hour) || hour < 0 || hour > 23) throw new Error(`Invalid hour: ${hour}`);
+  return `${hour % 12 === 0 ? 12 : hour % 12} ${hour < 12 ? 'AM' : 'PM'}`;
+}
+
+/** A Manila day + hour as an instant: "2026-10-23T22:00:00+08:00". The only
+ * way a staff-entered time becomes an instant. */
+export function manilaInstant(day: string, hour: number): string {
+  if (!parseDay(day)) throw new Error(`Invalid day: ${day}`);
+  if (!Number.isInteger(hour) || hour < 0 || hour > 23) throw new Error(`Invalid hour: ${hour}`);
+  return `${day}T${String(hour).padStart(2, '0')}:00:00+08:00`;
+}

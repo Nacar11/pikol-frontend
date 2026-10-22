@@ -1,21 +1,24 @@
 import { cn } from '@/lib/cn';
 import { addDays, formatDayChip, manilaToday } from '@/lib/manila';
 
-/** Today plus `days - 1` more, as Manila calendar days. */
+/** `days` Manila calendar days beginning `start` days from today (negative
+ * starts in the past). */
 export function DateStrip({
   value,
   onChange,
   days = 14,
+  start = 0,
 }: {
   value: string;
   onChange: (day: string) => void;
   days?: number;
+  start?: number;
 }) {
   const today = manilaToday();
   return (
     <div role="group" aria-label="Choose a day" className="flex gap-2 overflow-x-auto pb-1">
       {Array.from({ length: days }, (_, i) => {
-        const day = addDays(today, i);
+        const day = addDays(today, start + i);
         const { weekday, date } = formatDayChip(day);
         const selected = day === value;
         return (

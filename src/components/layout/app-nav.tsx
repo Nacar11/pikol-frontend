@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { canBookOnline, usePermissions } from '@/features/auth';
+import { StaffNav } from '@/features/staff';
 import { cn } from '@/lib/cn';
 
 const PLAYER_LINKS = [
@@ -10,11 +11,12 @@ const PLAYER_LINKS = [
   { href: '/bookings', label: 'My bookings' },
 ];
 
-/** Links come from permissions, never role. Phase 8 adds staff links. */
+/** Links come from permissions, never role. */
 export function AppNav() {
   const pathname = usePathname();
   const { data: permissions } = usePermissions();
-  if (!permissions || !canBookOnline(permissions)) return null;
+  if (!permissions) return null;
+  if (!canBookOnline(permissions)) return <StaffNav />;
   return (
     <nav aria-label="Main" className="flex items-center gap-1">
       {PLAYER_LINKS.map(({ href, label }) => {
