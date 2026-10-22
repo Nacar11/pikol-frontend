@@ -1,12 +1,14 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { adminBookingKeys, adminBookingsApi, type AdminBooking } from '@/features/admin-bookings';
 import { availabilityKeys } from '@/features/availability';
 import { useAuth } from '@/features/auth';
 import { catalogKeys } from '@/features/catalog';
 import { setupApi } from '../api';
 import { setupKeys } from '../keys';
 import type {
+  ClosureRequest,
   CourtCreate,
   CourtUpdate,
   PriceRuleCreate,
@@ -141,5 +143,59 @@ export function useDayPrices(courtId: number, date: string) {
     queryKey: setupKeys.prices(courtId, date),
     queryFn: () => setupApi.dayPrices(courtId, date),
     enabled: status === 'authenticated',
+  });
+}
+
+/** Closures are booking rows: there is no closures list route (ADR 0001). */
+function closureParams(venueId: number) {
+  return {
+    venue_id: venueId,
+    type: 'MAINTENANCE',
+    booking_status: 'CONFIRMED',
+    limit: 200,
+  };
+}
+
+/** Upcoming and current closures by start. The server also returns ended ones. */
+function upcoming(rows: AdminBooking[]): AdminBooking[] {
+  const now = Date.now();
+  return rows
+    .filter((b) => Date.parse(b.ends_at) > now)
+    .sort((a, b) => Date.parse(a.starts_at) - Date.parse(b.starts_at));
+}
+
+export function useClosures(venueId: number) {
+  const { status } = useAuth();
+  const params = closureParams(venueId);
+  return useQuery({
+    queryKey: adminBookingKeys.list(params),
+    queryFn: () => adminBookingsApi.list(params),
+    select: (page) => upcoming(page.data),
+    enabled: status === 'authenticated',
+  });
+}
+
+function useInvalidateClosures() {
+  const qc = useQueryClient();
+  return () => {
+    void qc.invalidateQueries({ queryKey: adminBookingKeys.all });
+    void qc.invalidateQueries({ queryKey: availabilityKeys.all });
+  };
+}
+
+export function useCloseCourts() {
+  const invalidate = useInvalidateClosures();
+  return useMutation({
+    mutationFn: (body: ClosureRequest) => setupApi.closeCourts(body),
+    onSuccess: invalidate,
+  });
+}
+
+export function useReopenClosure() {
+  const invalidate = useInvalidateClosures();
+  return useMutation({
+    mutationFn: (v: { id: number; reason: string }) =>
+      adminBookingsApi.reopenClosure(v.id, v.reason),
+    onSuccess: invalidate,
   });
 }

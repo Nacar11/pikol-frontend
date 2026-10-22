@@ -44,3 +44,12 @@ export type PriceRuleCreate = {
   hour_of_day?: number;
   price_centavos: number;
 };
+
+export type ClosureRequest = {
+  court_ids: number[];
+  starts_at: string;
+  ends_at: string;
+  reason: string;
+};
+/** Only the ids matter: the list is refetched, not patched. */
+export const ClosedCourtsSchema = z.array(z.object({ id: z.number() }));

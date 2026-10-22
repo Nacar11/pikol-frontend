@@ -1,6 +1,7 @@
 import type { Venue } from '@/features/catalog';
 import { ApiClient, apiClient } from '@/lib/api-client';
 import {
+  ClosedCourtsSchema,
   CourtPageSchema,
   CourtSchema,
   PriceRuleSchema,
@@ -8,6 +9,7 @@ import {
   ResolvedPricesSchema,
   VenuePageSchema,
   VenueSchema,
+  type ClosureRequest,
   type Court,
   type CourtCreate,
   type CourtUpdate,
@@ -95,5 +97,10 @@ export const setupApi = {
     return client
       .get<unknown>(`/admin/courts/${courtId}/prices`, { params: { date } })
       .then((r) => ResolvedPricesSchema.parse(r));
+  },
+
+  /** All-or-nothing: one blocked hour closes nothing. */
+  closeCourts(body: ClosureRequest, client: ApiClient = apiClient()): Promise<{ id: number }[]> {
+    return client.post<unknown>('/admin/closures', body).then((r) => ClosedCourtsSchema.parse(r));
   },
 };
