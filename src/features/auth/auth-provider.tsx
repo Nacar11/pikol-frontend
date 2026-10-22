@@ -5,7 +5,6 @@ import { createContext, useCallback, useEffect, useMemo, useRef, useState } from
 import { toast } from 'sonner';
 import { apiClient } from '@/lib/api-client';
 import { authApi } from './api';
-import { authKeys } from './keys';
 import type { AuthUser, LoginInput, TokenPair } from './schemas';
 
 export const REFRESH_STORAGE_KEY = 'pikol:refresh_token';
@@ -72,7 +71,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       writeStored(null);
       setUser(null);
       setStatus('unauthenticated');
-      queryClient.removeQueries({ queryKey: authKeys.all });
+      // Bookings (and their cached Maya checkout URLs) are per-user: drop
+      // everything, or the next player on this tab sees the last one's.
+      queryClient.clear();
       if (notify && !expiryNotified.current) {
         expiryNotified.current = true;
         toast.warning('Your session expired. Please sign in again.');
