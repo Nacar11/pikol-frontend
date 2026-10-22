@@ -7,6 +7,7 @@ import { errorCode } from '@/lib/api-error';
 import { bookingsApi } from '../api';
 import { bookingKeys } from '../keys';
 import { returnOutcome } from '../return-outcome';
+import type { Booking } from '../schemas';
 
 const POLL_MS = 2000;
 const REFRESH_AGAIN_MS = 15_000;
@@ -40,7 +41,12 @@ export function useConfirmBooking(id: number) {
   const refresh = () => {
     bookingsApi
       .refreshPayment(id)
-      .then((b) => qc.setQueryData(bookingKeys.detail(id), b))
+      .then((b) =>
+        // A refresh may resolve late; it never downgrades a terminal outcome.
+        qc.setQueryData<Booking>(bookingKeys.detail(id), (old) =>
+          old && returnOutcome(old) !== 'pending' ? old : b,
+        ),
+      )
       .catch(() => {
         // Rate-limited or provider trouble: the poll carries on regardless.
       });

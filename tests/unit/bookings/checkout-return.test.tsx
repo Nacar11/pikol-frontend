@@ -108,6 +108,28 @@ describe('checkout return page', () => {
     expect(refresh).toHaveBeenCalledTimes(2);
   });
 
+  it('never lets a late PENDING refresh undo a confirmation from a poll', async () => {
+    let resolveRefresh: (b: Booking) => void = () => {};
+    refresh.mockReturnValueOnce(
+      new Promise<Booking>((resolve) => {
+        resolveRefresh = resolve;
+      }),
+    );
+    get.mockResolvedValueOnce(booking()).mockResolvedValue(booking(PAID));
+    setup();
+    await advance(3_000);
+    expect(await screen.findByText("You're booked")).toBeInTheDocument();
+    await act(async () => {
+      resolveRefresh(booking());
+    });
+    // react-query notifies subscribers on a real timer; give it a tick.
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 20));
+    });
+    expect(screen.getByText("You're booked")).toBeInTheDocument();
+    expect(screen.queryByText('Confirming your booking…')).not.toBeInTheDocument();
+  });
+
   it('shows success immediately when the webhook already landed, and stops polling', async () => {
     get.mockResolvedValue(booking(PAID));
     refresh.mockResolvedValue(booking(PAID));
