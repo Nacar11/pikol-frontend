@@ -1,5 +1,5 @@
 import { QueryClientProvider } from '@tanstack/react-query';
-import { act, render, screen } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import CheckoutReturnPage from '@/app/(app)/checkout/return/page';
 import { bookingsApi } from '@/features/bookings/api';
@@ -137,11 +137,35 @@ describe('checkout return page', () => {
       }),
     );
     setup();
-    expect(await screen.findByText("Payment didn't go through")).toBeInTheDocument();
+    // FAILED is provisional while the mount refresh is out: no failure flash.
+    await waitFor(() => expect(get).toHaveBeenCalled());
+    await act(async () => {}); // let the FAILED booking land
+    expect(screen.getByText('Confirming your booking…')).toBeInTheDocument();
+    expect(screen.queryByText("Payment didn't go through")).not.toBeInTheDocument();
     await act(async () => {
       resolveRefresh(booking(PAID));
     });
     expect(await screen.findByText("You're booked")).toBeInTheDocument();
+    expect(screen.queryByText("Payment didn't go through")).not.toBeInTheDocument();
+  });
+
+  it('confirms a retry that succeeded after a FAILED attempt, never showing the failure', async () => {
+    const failed = booking({ payment_status: 'FAILED' });
+    get.mockResolvedValue(failed);
+    refresh
+      .mockRejectedValueOnce(new ApiError(502, { detail: 'down', code: 'X', request_id: 'r' }))
+      .mockImplementationOnce(async () => {
+        get.mockResolvedValue(booking(PAID));
+        return booking(PAID);
+      });
+    setup();
+    expect(await screen.findByText('Confirming your booking…')).toBeInTheDocument();
+    for (let t = 0; t < 16; t++) {
+      await advance(1_000);
+      expect(screen.queryByText("Payment didn't go through")).not.toBeInTheDocument();
+    }
+    expect(await screen.findByText("You're booked")).toBeInTheDocument();
+    expect(refresh).toHaveBeenCalledTimes(2);
     expect(screen.queryByText("Payment didn't go through")).not.toBeInTheDocument();
   });
 
@@ -186,12 +210,23 @@ describe('checkout return page', () => {
     expect(screen.getByText('Confirming your booking…')).toBeInTheDocument();
   });
 
-  it('shows Try again for a failed payment', async () => {
+  it('shows Try again for a failed payment only after the t=15s refresh returns', async () => {
     get.mockResolvedValue(booking({ payment_status: 'FAILED' }));
     refresh.mockResolvedValue(booking({ payment_status: 'FAILED' }));
     setup();
+    expect(await screen.findByText('Confirming your booking…')).toBeInTheDocument();
+    await advance(14_000);
+    expect(refresh).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText("Payment didn't go through")).not.toBeInTheDocument();
+    expect(screen.getByText('Confirming your booking…')).toBeInTheDocument();
+    await advance(1_000);
+    expect(refresh).toHaveBeenCalledTimes(2);
     expect(await screen.findByText("Payment didn't go through")).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Try again' })).toHaveAttribute('href', '/bookings/7');
+    // Still FAILED when the window ends: the failure copy, not the timeout copy.
+    await advance(16_000);
+    expect(screen.getByText("Payment didn't go through")).toBeInTheDocument();
+    expect(screen.queryByText(/still waiting for the payment provider/)).not.toBeInTheDocument();
   });
 
   it('shows the lapsed copy for an expired unpaid hold', async () => {
