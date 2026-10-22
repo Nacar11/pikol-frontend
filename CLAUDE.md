@@ -30,6 +30,20 @@ features/<slice>/
 
 ESLint enforces the barrel rule and forbids inline `queryKey` arrays.
 
+## Slices and routes
+
+| Slice | Owns |
+|---|---|
+| `auth` | sign-in/registration/recovery, `usePermissions`, `canBookOnline` |
+| `catalog` | the venue list (`GET /venues`) |
+| `availability` | the day grid and slot selection |
+| `bookings` | holds, the pay page, the checkout return, My Bookings |
+
+Routes: `/venues`, `/venues/[venueId]?date=`, `/bookings` (mine),
+`/bookings/[bookingId]` (pay page), `/checkout/return?booking_id=`. `/staff`
+is still a placeholder (Phase 8). `components/layout/app-nav.tsx` shows the
+player links when `canBookOnline`.
+
 ## Non-negotiables
 
 - **Every response is zod-parsed in `api.ts`.** Components never see raw JSON.
