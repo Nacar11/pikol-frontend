@@ -42,9 +42,10 @@ export function useConfirmBooking(id: number) {
     bookingsApi
       .refreshPayment(id)
       .then((b) =>
-        // A refresh may resolve late; it never downgrades a terminal outcome.
+        // A refresh may resolve late. Only a confirmation is protected: it is the one
+        // outcome the server never walks back (FAILED and lapsed holds can still flip to PAID).
         qc.setQueryData<Booking>(bookingKeys.detail(id), (old) =>
-          old && returnOutcome(old) !== 'pending' ? old : b,
+          old && returnOutcome(old) === 'confirmed' ? old : b,
         ),
       )
       .catch(() => {

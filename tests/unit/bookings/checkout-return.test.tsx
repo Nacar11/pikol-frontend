@@ -62,7 +62,7 @@ function setup() {
       <CheckoutReturnPage />
     </QueryClientProvider>,
   );
-  return { invalidate };
+  return { invalidate, qc };
 }
 
 async function advance(ms: number) {
@@ -116,18 +116,33 @@ describe('checkout return page', () => {
       }),
     );
     get.mockResolvedValueOnce(booking()).mockResolvedValue(booking(PAID));
-    setup();
+    const { qc } = setup();
     await advance(3_000);
     expect(await screen.findByText("You're booked")).toBeInTheDocument();
     await act(async () => {
       resolveRefresh(booking());
     });
-    // react-query notifies subscribers on a real timer; give it a tick.
-    await act(async () => {
-      await new Promise((r) => setTimeout(r, 20));
-    });
+    await act(async () => {}); // flush the refresh's .then
+    expect(qc.getQueryData<Booking>(['bookings', 'detail', 7])?.payment_status).toBe('PAID');
     expect(screen.getByText("You're booked")).toBeInTheDocument();
     expect(screen.queryByText('Confirming your booking…')).not.toBeInTheDocument();
+  });
+
+  it('lets a refresh result replace a stale FAILED with the real CONFIRMED/PAID', async () => {
+    get.mockResolvedValue(booking({ payment_status: 'FAILED' }));
+    let resolveRefresh: (b: Booking) => void = () => {};
+    refresh.mockReturnValueOnce(
+      new Promise<Booking>((resolve) => {
+        resolveRefresh = resolve;
+      }),
+    );
+    setup();
+    expect(await screen.findByText("Payment didn't go through")).toBeInTheDocument();
+    await act(async () => {
+      resolveRefresh(booking(PAID));
+    });
+    expect(await screen.findByText("You're booked")).toBeInTheDocument();
+    expect(screen.queryByText("Payment didn't go through")).not.toBeInTheDocument();
   });
 
   it('shows success immediately when the webhook already landed, and stops polling', async () => {
