@@ -38,11 +38,22 @@ ESLint enforces the barrel rule and forbids inline `queryKey` arrays.
 | `catalog` | the venue list (`GET /venues`) |
 | `availability` | the day grid and slot selection |
 | `bookings` | holds, the pay page, the checkout return, My Bookings |
+| `admin-bookings` | the staff booking reads and actions (`/admin/bookings`, mark-paid, outcome, cancel, resolve) |
+| `staff` | `StaffGate` (permission gate), `StaffNav`, `VenuePicker`, `useStaffVenue`, `STAFF_LINKS` |
+| `setup` | venues, courts, price rules and the price preview, closures |
+| `team` | staff accounts: invites, resend/revoke, deactivate |
+| `parameters` | the owner's business-parameters screen |
 
 Routes: `/venues`, `/venues/[venueId]?date=`, `/bookings` (mine),
-`/bookings/[bookingId]` (pay page), `/checkout/return?booking_id=`. `/staff`
-is still a placeholder (Phase 8). `components/layout/app-nav.tsx` shows the
-player links when `canBookOnline`.
+`/bookings/[bookingId]` (pay page), `/checkout/return?booking_id=`.
+`components/layout/app-nav.tsx` shows the player links when `canBookOnline`.
+
+Staff console (every page gated on a permission code, never a role): `/staff`
+redirects to `/staff/schedule`; the others are `/staff/schedule?venue=&date=`,
+`/staff/bookings/[bookingId]`, `/staff/resolution`, `/staff/venues`,
+`/staff/courts?venue=`, `/staff/courts/[courtId]/pricing`,
+`/staff/closures?venue=`, `/staff/users` and `/staff/parameters`. A user with a
+`venue_id` works at that venue only; the owner picks one with `?venue=`.
 
 ## Non-negotiables
 
