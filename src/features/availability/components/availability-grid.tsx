@@ -64,7 +64,7 @@ export function AvailabilityGrid({ data, selection, onCellTap, selectable }: Pro
                           i >= selection.start &&
                           i <= selection.end
                         }
-                        openPast={selectable?.('PAST') ?? false}
+                        openPast={!!onCellTap && (selectable?.('PAST') ?? false)}
                         onTap={onCellTap && (() => onCellTap(court.court_id, i))}
                       />
                     )}
@@ -117,11 +117,15 @@ function Cell({
   }
 
   const price = formatPeso(slot.price_centavos);
-  const label = `${where}, ${selected ? 'selected' : 'available'}, ${price}`;
+  const started = slot.status === 'PAST';
+  const state = selected ? 'selected' : 'available';
+  const label = `${where}, ${state}${started ? ', already started' : ''}, ${price}`;
   const style = cn(
     CELL,
     'rounded border font-medium',
     selected ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-background',
+    // A started hour is a backdate: dashed and muted, but still tappable.
+    started && !selected && 'border-dashed bg-muted/50 text-muted-foreground',
   );
   if (!onTap) {
     return (

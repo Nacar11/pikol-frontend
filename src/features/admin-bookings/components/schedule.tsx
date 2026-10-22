@@ -20,6 +20,7 @@ import {
 import { useStaffVenue, VenuePicker } from '@/features/staff';
 import { errorCode, errorMessage } from '@/lib/api-error';
 import { formatDayLong } from '@/lib/manila';
+import { REFETCH_MS } from '../hooks/use-day-bookings';
 import { useWalkIn } from '../hooks/use-admin-booking-mutations';
 import { adminBookingKeys } from '../keys';
 import { DayBookings } from './day-bookings';
@@ -28,8 +29,6 @@ import { WalkInBar } from './walk-in-bar';
 /** Staff may also pick `PAST`: free but too soon for a player, which is the
  * walk-in-now case. */
 const staffSelectable = (s: string): boolean => s === 'AVAILABLE' || s === 'PAST';
-
-const REFETCH_MS = 30_000;
 
 /** The staff home screen: the grid, the walk-in bar and the day's bookings. */
 export function Schedule({

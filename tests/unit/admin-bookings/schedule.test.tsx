@@ -107,7 +107,7 @@ function setup(permissions = ['BOOKING:ReadAny', 'BOOKING:CreateWalkIn']) {
   return { qc, view };
 }
 
-const PAST_CELL = 'Court 2, 6 PM, available, ₱600';
+const PAST_CELL = 'Court 2, 6 PM, available, already started, ₱600';
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -139,6 +139,9 @@ describe('Schedule walk-ins', () => {
     setup(['BOOKING:ReadAny']);
     await screen.findByLabelText('Court 2, 7 PM, available, ₱600');
     expect(screen.queryByRole('button', { name: /Court 2/ })).not.toBeInTheDocument();
+    // The started hour looks exactly as it does for a player.
+    expect(screen.getByRole('img', { name: 'Court 2, 6 PM, past' })).toBeInTheDocument();
+    expect(screen.queryByLabelText(/6 PM, available/)).not.toBeInTheDocument();
   });
 
   it('clears the selection on SLOT_UNAVAILABLE and refetches', async () => {

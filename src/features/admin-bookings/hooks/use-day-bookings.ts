@@ -5,6 +5,9 @@ import { useAuth } from '@/features/auth';
 import { adminBookingsApi } from '../api';
 import { adminBookingKeys } from '../keys';
 
+/** Staff screens refetch this often. */
+export const REFETCH_MS = 30_000;
+
 /** Every booking the server returns for one venue-day, in server order.
  * Refetches every 30 s: holds lapse and players pay while the counter is open. */
 export function useDayBookings(venueId: number, date: string) {
@@ -13,7 +16,7 @@ export function useDayBookings(venueId: number, date: string) {
     queryKey: adminBookingKeys.day(venueId, date),
     queryFn: () => adminBookingsApi.day(venueId, date),
     enabled: status === 'authenticated',
-    refetchInterval: 30_000,
+    refetchInterval: REFETCH_MS,
     refetchIntervalInBackground: false,
   });
 }
