@@ -60,6 +60,18 @@ function setup() {
   return { qc, invalidate };
 }
 
+function tree(qc: ReturnType<typeof createQueryClient>, date: string) {
+  return (
+    <QueryClientProvider client={qc}>
+      <AuthContext.Provider
+        value={{ status: 'authenticated', user: null, login: vi.fn(), logout: vi.fn() }}
+      >
+        <BookVenueDay venueId={1} date={date} />
+      </AuthContext.Provider>
+    </QueryClientProvider>
+  );
+}
+
 async function selectTwoHours() {
   await userEvent.click(await screen.findByLabelText('Court 2, 6 PM, available, ₱600'));
   await userEvent.click(screen.getByLabelText('Court 2, 7 PM, available, ₱600'));
@@ -162,5 +174,27 @@ describe('BookVenueDay', () => {
       expect(screen.queryByRole('button', { name: 'Hold these hours' })).not.toBeInTheDocument(),
     );
     expect(screen.getByLabelText('Court 2, 6 PM, available, ₱600')).toBeInTheDocument();
+  });
+
+  it('drops the selection when the day changes, even if the same cells are available', async () => {
+    const qc = createQueryClient();
+    const view = render(tree(qc, '2026-10-23'));
+    await selectTwoHours();
+    expect(screen.getByRole('button', { name: 'Hold these hours' })).toBeInTheDocument();
+    day.mockResolvedValue({ ...grid(), date: '2026-10-24' });
+    view.rerender(tree(qc, '2026-10-24'));
+    await screen.findByLabelText('Court 2, 6 PM, available, ₱600');
+    expect(screen.queryByRole('button', { name: 'Hold these hours' })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/selected/)).not.toBeInTheDocument();
+  });
+
+  it('clears the HOLD_LIMIT alert when the selection changes', async () => {
+    create.mockRejectedValue(apiError(409, 'HOLD_LIMIT', 'You have too many open holds.'));
+    setup();
+    await selectTwoHours();
+    await userEvent.click(screen.getByRole('button', { name: 'Hold these hours' }));
+    await screen.findByText('You have too many open holds.');
+    await userEvent.click(screen.getByLabelText('Court 2, 9 PM, available, ₱600'));
+    expect(screen.queryByText('You have too many open holds.')).not.toBeInTheDocument();
   });
 });

@@ -23,6 +23,11 @@ import { useCreateHold } from '../hooks/use-booking-mutations';
 /** The player's grid: select consecutive hours, then ask the server to hold
  * them. Selection is local and shown as *selected*; only a 201 makes a hold. */
 export function BookVenueDay({ venueId, date }: { venueId: number; date: string }) {
+  // Keyed so a new venue or day starts with no selection and no stale alert.
+  return <VenueDaySelection key={`${venueId}-${date}`} venueId={venueId} date={date} />;
+}
+
+function VenueDaySelection({ venueId, date }: { venueId: number; date: string }) {
   const qc = useQueryClient();
   const { data, error, isPending, dataUpdatedAt } = useAvailability(venueId, date);
   const hold = useCreateHold(venueId, date);
@@ -65,7 +70,10 @@ export function BookVenueDay({ venueId, date }: { venueId: number; date: string 
       <AvailabilityGrid
         data={data}
         selection={selection}
-        onCellTap={(courtId, index) => setSelection((sel) => tapCell(sel, data, courtId, index))}
+        onCellTap={(courtId, index) => {
+          setLimitDetail(null);
+          setSelection((sel) => tapCell(sel, data, courtId, index));
+        }}
       />
       {limitDetail && (
         <Alert tone="error">
