@@ -34,6 +34,26 @@ export function manilaDayOf(iso: string): string {
   return manilaToday(new Date(iso));
 }
 
+/** The Manila hour (0-23) of the instant `now`. */
+function manilaHourOf(now: Date): number {
+  return Number(parts(now, { hour: '2-digit', hourCycle: 'h23' }).hour);
+}
+
+/** The next whole Manila hour after `now`, and the hour after it. Used to
+ * default a range to the soonest valid start (a past start is rejected). */
+export function nextHourRange(now: Date = new Date()): {
+  startDay: string;
+  startHour: number;
+  endDay: string;
+  endHour: number;
+} {
+  const startAt = new Date(now.getTime() + 3_600_000);
+  const startDay = manilaToday(startAt);
+  const startHour = manilaHourOf(startAt);
+  const endHour = (startHour + 1) % 24;
+  return { startDay, startHour, endDay: endHour === 0 ? addDays(startDay, 1) : startDay, endHour };
+}
+
 function parseDay(day: string): Date | null {
   const m = DAY_RE.exec(day);
   if (!m) return null;

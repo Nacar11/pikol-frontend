@@ -138,6 +138,33 @@ describe('ClosureForm', () => {
     expect(await screen.findByText('Venue not found.')).toBeInTheDocument();
   });
 
+  it('defaults to the next Manila hour, for one hour', async () => {
+    vi.useFakeTimers({ toFake: ['Date'], now: NOW });
+    renderPage();
+    expect(await screen.findByLabelText('Start day')).toHaveValue('2026-10-23');
+    expect(screen.getByLabelText('Start hour')).toHaveValue('13');
+    expect(screen.getByLabelText('End day')).toHaveValue('2026-10-23');
+    expect(screen.getByLabelText('End hour')).toHaveValue('14');
+  });
+
+  it('rolls the default over midnight (23:30 Manila starts at 12 AM tomorrow)', async () => {
+    vi.useFakeTimers({ toFake: ['Date'], now: new Date('2026-10-23T15:30:00Z') });
+    renderPage();
+    expect(await screen.findByLabelText('Start day')).toHaveValue('2026-10-24');
+    expect(screen.getByLabelText('Start hour')).toHaveValue('0');
+    expect(screen.getByLabelText('End day')).toHaveValue('2026-10-24');
+    expect(screen.getByLabelText('End hour')).toHaveValue('1');
+  });
+
+  it('rolls the end over midnight (10:30 PM starts at 11 PM, ends 12 AM tomorrow)', async () => {
+    vi.useFakeTimers({ toFake: ['Date'], now: new Date('2026-10-23T14:30:00Z') });
+    renderPage();
+    expect(await screen.findByLabelText('Start day')).toHaveValue('2026-10-23');
+    expect(screen.getByLabelText('Start hour')).toHaveValue('23');
+    expect(screen.getByLabelText('End day')).toHaveValue('2026-10-24');
+    expect(screen.getByLabelText('End hour')).toHaveValue('0');
+  });
+
   it('Select all checks every active court', async () => {
     const u = userEvent.setup();
     api.closeCourts.mockResolvedValue([] as never);

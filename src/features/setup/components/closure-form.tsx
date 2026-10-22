@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { errorCode, errorMessage } from '@/lib/api-error';
-import { formatHourOfDay, manilaInstant, manilaToday } from '@/lib/manila';
+import { formatHourOfDay, manilaInstant, nextHourRange } from '@/lib/manila';
 import { useCourts } from '@/features/catalog';
 import { useCloseCourts } from '../hooks/use-setup';
 
@@ -24,12 +24,12 @@ function serverMessage(err: unknown): string {
 export function ClosureForm({ venueId }: { venueId: number }) {
   const { data, isError, error } = useCourts(venueId);
   const close = useCloseCourts();
-  const today = manilaToday();
+  const [initial] = useState(() => nextHourRange());
   const [courtIds, setCourtIds] = useState<number[]>([]);
-  const [startDay, setStartDay] = useState(today);
-  const [startHour, setStartHour] = useState(8);
-  const [endDay, setEndDay] = useState(today);
-  const [endHour, setEndHour] = useState(12);
+  const [startDay, setStartDay] = useState(initial.startDay);
+  const [startHour, setStartHour] = useState(initial.startHour);
+  const [endDay, setEndDay] = useState(initial.endDay);
+  const [endHour, setEndHour] = useState(initial.endHour);
   const [reason, setReason] = useState('');
   const [problem, setProblem] = useState<string | null>(null);
 
