@@ -54,7 +54,12 @@ export function useSetActive() {
 }
 
 export function useResendInvitation() {
-  return useMutation({ mutationFn: (id: number) => teamApi.resend(id) });
+  const invalidate = useInvalidateTeam();
+  return useMutation({
+    mutationFn: (id: number) => teamApi.resend(id),
+    // ALREADY_ACCEPTED means the row is stale: show the truth.
+    onError: invalidate,
+  });
 }
 
 export function useRevokeInvitation() {

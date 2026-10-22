@@ -205,6 +205,43 @@ describe('TeamList', () => {
     await waitFor(() => expect(screen.queryByText('First2 Last2')).not.toBeInTheDocument());
   });
 
+  it('a failed action followed by a successful one shows no stale error', async () => {
+    const u = userEvent.setup();
+    users = [person(1), person(2), person(3, { email_verified_at: null })];
+    http.patch.mockRejectedValue(
+      new ApiError(409, { detail: 'Cannot deactivate.', code: 'CONFLICT', request_id: 'r' }),
+    );
+    http.post.mockResolvedValue(undefined);
+    setup(MANAGER);
+    await u.click(await screen.findByRole('button', { name: 'Deactivate First2 Last2' }));
+    expect(await screen.findByText('Cannot deactivate.')).toBeInTheDocument();
+    await u.click(screen.getByRole('button', { name: /Resend/ }));
+    expect(await screen.findByText('Invitation resent to p3@x.ph.')).toBeInTheDocument();
+    expect(screen.queryByText('Cannot deactivate.')).not.toBeInTheDocument();
+    await u.click(screen.getByRole('button', { name: 'Deactivate First2 Last2' }));
+    await waitFor(() => expect(screen.queryByText(/Invitation resent/)).not.toBeInTheDocument());
+  });
+
+  it('ALREADY_ACCEPTED on resend refreshes the stale Invited row', async () => {
+    const u = userEvent.setup();
+    users = [person(1), person(2, { email_verified_at: null })];
+    http.post.mockImplementation(() => {
+      users = users.map((x) => ({ ...x, email_verified_at: '2026-10-02T00:00:00Z' }));
+      return Promise.reject(
+        new ApiError(409, {
+          detail: 'Already accepted.',
+          code: 'ALREADY_ACCEPTED',
+          request_id: 'r',
+        }),
+      );
+    });
+    setup(MANAGER);
+    await u.click(await screen.findByRole('button', { name: /Resend/ }));
+    expect(await screen.findByText('Already accepted.')).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole('button', { name: /Resend/ })).toBeNull());
+    expect(screen.queryByText(/Invited/)).not.toBeInTheDocument();
+  });
+
   it('deactivate patches is_active false, then offers Reactivate', async () => {
     const u = userEvent.setup();
     users = [person(1), person(2)];

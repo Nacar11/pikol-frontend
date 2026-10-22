@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { PageLoading } from '@/components/ui/page-loading';
@@ -30,15 +31,24 @@ function Team() {
   const resend = useResendInvitation();
   const revoke = useRevokeInvitation();
 
-  const actionError = [setActive, resend, revoke].find((m) => m.isError)?.error;
+  // Only the latest action's outcome is shown: starting one clears the last.
+  const [outcome, setOutcome] = useState<{ tone: 'success' | 'error'; message: string } | null>(
+    null,
+  );
+  function run<T>(mutation: { mutate: (v: T, o: object) => void }, vars: T, success?: string) {
+    setOutcome(null);
+    mutation.mutate(vars, {
+      onSuccess: () => setOutcome(success ? { tone: 'success', message: success } : null),
+      onError: (err: unknown) => setOutcome({ tone: 'error', message: errorMessage(err) }),
+    });
+  }
 
   return (
     <section className="space-y-4">
       <h1 className="text-xl font-semibold">Staff</h1>
       <InviteForm />
-      {resend.isSuccess && <Alert tone="success">Invitation resent.</Alert>}
-      {/* List level: a refetch can drop the row this error is about. */}
-      {actionError && <Alert tone="error">{errorMessage(actionError)}</Alert>}
+      {/* List level: a refetch can drop the row this outcome is about. */}
+      {outcome && <Alert tone={outcome.tone}>{outcome.message}</Alert>}
       {error && <Alert tone="error">{errorMessage(error)}</Alert>}
       {!data ? (
         error ? null : (
@@ -68,14 +78,14 @@ function Team() {
                         <Button
                           variant="secondary"
                           aria-label={`Resend invitation to ${name}`}
-                          onClick={() => resend.mutate(u.id)}
+                          onClick={() => run(resend, u.id, `Invitation resent to ${u.email}.`)}
                         >
                           Resend
                         </Button>
                         <Button
                           variant="secondary"
                           aria-label={`Revoke invitation for ${name}`}
-                          onClick={() => revoke.mutate(u.id)}
+                          onClick={() => run(revoke, u.id)}
                         >
                           Revoke
                         </Button>
@@ -84,7 +94,7 @@ function Team() {
                       <Button
                         variant="secondary"
                         aria-label={`${u.is_active ? 'Deactivate' : 'Reactivate'} ${name}`}
-                        onClick={() => setActive.mutate({ id: u.id, is_active: !u.is_active })}
+                        onClick={() => run(setActive, { id: u.id, is_active: !u.is_active })}
                       >
                         {u.is_active ? 'Deactivate' : 'Reactivate'}
                       </Button>
