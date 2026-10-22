@@ -1,17 +1,14 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PageLoading } from '@/components/ui/page-loading';
-import { useAuth } from '@/features/auth';
 import { StaffGate } from '@/features/staff';
 import { errorMessage } from '@/lib/api-error';
 import { formatDateTime } from '@/lib/manila';
-import { parametersApi } from '../api';
-import { parameterKeys } from '../keys';
+import { useParameters, useUpdateParameter } from '../hooks/use-parameters';
 import type { Parameter } from '../schemas';
 
 export function ParameterTable() {
@@ -23,12 +20,7 @@ export function ParameterTable() {
 }
 
 function Parameters() {
-  const { status } = useAuth();
-  const { data, error } = useQuery({
-    queryKey: parameterKeys.list(),
-    queryFn: () => parametersApi.list(),
-    enabled: status === 'authenticated',
-  });
+  const { data, error } = useParameters();
 
   return (
     <section className="space-y-4">
@@ -55,17 +47,8 @@ function Parameters() {
 }
 
 function ParameterRow({ parameter }: { parameter: Parameter }) {
-  const qc = useQueryClient();
   const [draft, setDraft] = useState(parameter.value);
-  const save = useMutation({
-    mutationFn: (value: string) => parametersApi.update(parameter.key, value),
-    onSuccess: (row) => {
-      qc.setQueryData<Parameter[]>(parameterKeys.list(), (old) =>
-        old?.map((p) => (p.key === row.key ? row : p)),
-      );
-      setDraft(row.value);
-    },
-  });
+  const save = useUpdateParameter(parameter.key, (row) => setDraft(row.value));
   const dirty = draft !== parameter.value;
 
   return (
