@@ -131,6 +131,44 @@ describe('BookingDetail', () => {
     expect(screen.getByRole('button', { name: 'Pay ₱1,320' })).toBeDisabled();
   });
 
+  it('keeps asking the server while it still says PENDING after 0:00', async () => {
+    setup();
+    await screen.findByText('1:30');
+    // The client clock ran ahead: the server still holds the court at zero.
+    get
+      .mockResolvedValueOnce(booking())
+      .mockResolvedValue(
+        booking({ booking_status: 'EXPIRED', display_status: 'EXPIRED', expires_at: null }),
+      );
+    await act(async () => {
+      vi.advanceTimersByTime(90_000);
+    });
+    await waitFor(() => expect(get).toHaveBeenCalledTimes(2));
+    expect(screen.getByRole('button', { name: 'Pay ₱1,320' })).toBeDisabled();
+    await act(async () => {
+      vi.advanceTimersByTime(3_000);
+    });
+    expect(
+      await screen.findByText(
+        'Your hold has expired. If you already opened the payment page, paying now may not secure this court.',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^Pay/ })).not.toBeInTheDocument();
+  });
+
+  it('keeps showing a loaded booking when a background refetch fails', async () => {
+    setup();
+    await screen.findByText('1:30');
+    get.mockRejectedValue(apiError(429, 'RATE_LIMITED', 'Slow down.'));
+    await act(async () => {
+      vi.advanceTimersByTime(90_000);
+    });
+    await waitFor(() => expect(get).toHaveBeenCalledTimes(2));
+    await act(async () => {}); // flush the failed refetch
+    expect(screen.getByText('PK-ABC123')).toBeInTheDocument();
+    expect(screen.queryByText('Slow down.')).not.toBeInTheDocument();
+  });
+
   it('pays with the cached URL and does not call checkout', async () => {
     setup('https://maya.test/c');
     await userEvent.click(await screen.findByRole('button', { name: 'Pay ₱1,320' }));

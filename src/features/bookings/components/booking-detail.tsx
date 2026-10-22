@@ -26,14 +26,31 @@ export function BookingNotFound() {
   );
 }
 
+/** How often to ask again while this clock says the hold is over but the server does not. */
+const ELAPSED_POLL_MS = 3000;
+
 export function BookingDetail({ id }: { id: number }) {
-  const { data: booking, error, isPending, refetch } = useBooking(id);
   // The `expires_at` that has run out on this clock; Pay stays off until the
   // server returns a booking with a different one (or a different status).
   const [elapsed, setElapsed] = useState<string | null>(null);
+  const {
+    data: booking,
+    error,
+    isPending,
+    refetch,
+  } = useBooking(id, {
+    // A clock running ahead reaches 0:00 first. Keep asking until the server agrees.
+    refetchInterval: (q) => {
+      const b = q.state.data;
+      return b && elapsed !== null && b.expires_at === elapsed && b.display_status === 'PENDING'
+        ? ELAPSED_POLL_MS
+        : false;
+    },
+  });
 
   if (isPending) return <PageLoading label="Loading booking" />;
-  if (error) {
+  // A failed background refetch keeps the booking already on screen.
+  if (error && !booking) {
     return errorCode(error) === 'NOT_FOUND' ? (
       <BookingNotFound />
     ) : (
