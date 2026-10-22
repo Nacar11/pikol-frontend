@@ -176,6 +176,19 @@ describe('BookingDetail', () => {
     expect(checkout).not.toHaveBeenCalled();
   });
 
+  it('re-enables Pay when the browser restores the page from the back-forward cache', async () => {
+    setup('https://maya.test/c');
+    await userEvent.click(await screen.findByRole('button', { name: 'Pay ₱1,320' }));
+    await waitFor(() => expect(navigateExternal).toHaveBeenCalledWith('https://maya.test/c'));
+    expect(screen.getByRole('button', { name: 'Pay ₱1,320' })).toBeDisabled();
+    const back = new Event('pageshow');
+    Object.defineProperty(back, 'persisted', { value: true });
+    act(() => {
+      window.dispatchEvent(back);
+    });
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Pay ₱1,320' })).toBeEnabled());
+  });
+
   it('calls checkout once when no URL is cached, then redirects', async () => {
     checkout.mockResolvedValue({ ...booking(), checkout_url: 'https://maya.test/new' });
     setup();

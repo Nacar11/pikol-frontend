@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { errorMessage } from '@/lib/api-error';
@@ -16,6 +17,18 @@ export function PayButton({
   disabled: boolean;
 }) {
   const pay = usePay(id);
+  const { reset } = pay;
+
+  // Back from Maya via the back-forward cache (the iOS back gesture) restores
+  // this page mid-redirect. Clear the spent mutation so Pay works again.
+  useEffect(() => {
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) reset();
+    };
+    window.addEventListener('pageshow', onPageShow);
+    return () => window.removeEventListener('pageshow', onPageShow);
+  }, [reset]);
+
   return (
     <div className="space-y-2">
       {pay.isError && <Alert tone="error">{errorMessage(pay.error)}</Alert>}
