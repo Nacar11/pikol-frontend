@@ -30,7 +30,7 @@ function Courts() {
   return <VenueCourts key={venueId} venueId={venueId} />;
 }
 
-/** A blank order is "unset"; anything else must be a whole number. */
+/** A whole number, or null (blank included), which disables submit. */
 function parseOrder(raw: string): number | null {
   return /^\d+$/.test(raw.trim()) ? Number(raw.trim()) : null;
 }
