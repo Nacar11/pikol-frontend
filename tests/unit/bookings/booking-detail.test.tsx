@@ -189,6 +189,16 @@ describe('BookingDetail', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'Pay ₱1,320' })).toBeEnabled());
   });
 
+  it('shows an error and re-enables Pay when the checkout URL is refused', async () => {
+    vi.mocked(navigateExternal).mockImplementationOnce(() => {
+      throw new Error('Refusing to open an unsafe payment link.');
+    });
+    setup('javascript:alert(1)');
+    await userEvent.click(await screen.findByRole('button', { name: 'Pay ₱1,320' }));
+    expect(await screen.findByText('Something went wrong. Please try again.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Pay ₱1,320' })).toBeEnabled();
+  });
+
   it('calls checkout once when no URL is cached, then redirects', async () => {
     checkout.mockResolvedValue({ ...booking(), checkout_url: 'https://maya.test/new' });
     setup();
