@@ -21,6 +21,12 @@ const TYPE_LABELS: Record<AdminBooking['type'], string> = {
   MAINTENANCE: 'Maintenance closure',
 };
 
+const PAYMENT_METHOD_LABELS: Record<NonNullable<AdminBooking['payment_method']>, string> = {
+  CASH: 'Cash',
+  MANUAL_GCASH: 'GCash (manual)',
+  ONLINE: 'Online',
+};
+
 export function AdminBookingNotFound() {
   return (
     <section className="space-y-3">
@@ -126,7 +132,9 @@ function Summary({ booking }: { booking: AdminBooking }) {
             <p className="font-medium">Walk-in</p>
           )}
           {booking.payment_method && (
-            <p className="text-muted-foreground">Paid by {booking.payment_method}</p>
+            <p className="text-muted-foreground">
+              Paid by {PAYMENT_METHOD_LABELS[booking.payment_method]}
+            </p>
           )}
         </div>
       )}

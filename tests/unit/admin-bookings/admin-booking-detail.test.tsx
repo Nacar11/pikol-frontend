@@ -109,6 +109,16 @@ describe('AdminBookingDetail', () => {
     expect(screen.getByText('Bring balls')).toBeInTheDocument();
   });
 
+  it.each([
+    ['CASH', 'Paid by Cash'],
+    ['MANUAL_GCASH', 'Paid by GCash (manual)'],
+    ['ONLINE', 'Paid by Online'],
+  ] as const)('labels the payment method %s', async (method, label) => {
+    api.get.mockResolvedValue(booking({ payment_method: method }));
+    setup();
+    expect(await screen.findByText(label)).toBeInTheDocument();
+  });
+
   it('shows the player name and email', async () => {
     api.get.mockResolvedValue(
       booking({
