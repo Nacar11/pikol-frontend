@@ -6,6 +6,8 @@ import { Suspense, useEffect } from 'react';
 import { Alert } from '@/components/ui/alert';
 import { PageLoading } from '@/components/ui/page-loading';
 import { AvailabilityGrid, DateStrip, useAvailability } from '@/features/availability';
+import { canBookOnline, usePermissions } from '@/features/auth';
+import { BookVenueDay } from '@/features/bookings';
 import { useVenue } from '@/features/catalog';
 import { errorMessage } from '@/lib/api-error';
 import { formatDayLong, isManilaDay, manilaToday } from '@/lib/manila';
@@ -56,12 +58,22 @@ function VenueDay() {
         <p className="text-sm text-muted-foreground">{formatDayLong(date)}</p>
       </div>
       <DateStrip value={date} onChange={(d) => router.replace(`${pathname}?date=${d}`)} />
-      <Grid venueId={venueId} date={date} />
+      <DayGrid venueId={venueId} date={date} />
     </section>
   );
 }
 
-function Grid({ venueId, date }: { venueId: number; date: string }) {
+/** Players get the booking grid; staff see it read-only. */
+function DayGrid({ venueId, date }: { venueId: number; date: string }) {
+  const { data: permissions, isPending } = usePermissions();
+  if (isPending) return <PageLoading label="Loading availability" />;
+  if (permissions && canBookOnline(permissions)) {
+    return <BookVenueDay venueId={venueId} date={date} />;
+  }
+  return <ReadOnlyGrid venueId={venueId} date={date} />;
+}
+
+function ReadOnlyGrid({ venueId, date }: { venueId: number; date: string }) {
   const { data, error, isPending } = useAvailability(venueId, date);
   if (error) return <Alert tone="error">{errorMessage(error)}</Alert>;
   if (isPending) return <PageLoading label="Loading availability" />;
