@@ -1,17 +1,24 @@
 'use client';
 
-import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { useAuth } from '@/features/auth';
 import { teamApi } from '../api';
 import { teamKeys } from '../keys';
 import type { Invite } from '../schemas';
 
-/** The team, a page at a time. */
-export function useTeam() {
+/** The team, a page at a time, optionally narrowed by name or email. */
+export function useTeam(q = '') {
   const { status } = useAuth();
   return useInfiniteQuery({
-    queryKey: teamKeys.list(),
-    queryFn: ({ pageParam }) => teamApi.list(pageParam),
+    queryKey: teamKeys.list(q),
+    queryFn: ({ pageParam }) => teamApi.list(pageParam, q),
+    // A new search keeps the old rows on screen until its answer lands.
+    placeholderData: keepPreviousData,
     initialPageParam: 1,
     getNextPageParam: (last) => (last.has_more ? last.page + 1 : undefined),
     enabled: status === 'authenticated',
@@ -22,7 +29,7 @@ export function useTeam() {
 function useInvalidateTeam() {
   const qc = useQueryClient();
   return () => {
-    void qc.invalidateQueries({ queryKey: teamKeys.list() });
+    void qc.invalidateQueries({ queryKey: teamKeys.lists() });
   };
 }
 

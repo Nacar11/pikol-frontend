@@ -2,6 +2,7 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { adminBookingsApi } from '@/features/admin-bookings';
 import { authApi } from '@/features/auth/api';
 import { staffApi } from '@/features/staff/api';
 import { catalogKeys } from '@/features/catalog/keys';
@@ -12,8 +13,9 @@ import { ApiError } from '@/lib/api-client';
 import { renderWithAuth, setSearch } from '../auth/render';
 
 vi.mock('@/features/setup/api', () => ({
-  setupApi: { courts: vi.fn(), createCourt: vi.fn(), updateCourt: vi.fn() },
+  setupApi: { courts: vi.fn(), createCourt: vi.fn(), updateCourt: vi.fn(), dayPrices: vi.fn() },
 }));
+vi.mock('@/features/admin-bookings/api', () => ({ adminBookingsApi: { day: vi.fn() } }));
 vi.mock('@/features/auth/api', () => ({ authApi: { permissions: vi.fn() } }));
 vi.mock('@/features/staff/api', () => ({ staffApi: { myVenues: vi.fn() } }));
 vi.mock('next/navigation', async () => ({
@@ -59,6 +61,9 @@ describe('CourtAdmin', () => {
     const names = screen.getAllByTestId('court-name').map((n) => n.textContent);
     expect(names).toEqual(['Court 2', 'Court 3', 'Court 1']);
     expect(screen.getByText('Inactive')).toBeInTheDocument();
+    expect(
+      screen.getByText('2 active · Card order is the column order on the schedule'),
+    ).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Prices for Court 2' })).toHaveAttribute(
       'href',
       '/staff/courts/2/pricing',
@@ -77,12 +82,13 @@ describe('CourtAdmin', () => {
     });
     setup();
     await screen.findByText('Court 1');
-    await u.type(screen.getByLabelText('Name'), 'Court 9');
-    await u.clear(screen.getByLabelText('Sort order'));
-    await u.type(screen.getByLabelText('Sort order'), '5');
+    expect(screen.getByText('Appears as column 2 on the schedule')).toBeInTheDocument();
     await u.click(screen.getByRole('button', { name: 'Add court' }));
+    await u.type(screen.getByLabelText('Name'), 'Court 9');
+    await u.click(screen.getByRole('button', { name: 'Create court' }));
+    // Appended after the last court.
     await waitFor(() =>
-      expect(api.createCourt).toHaveBeenCalledWith(2, { name: 'Court 9', sort_order: 5 }),
+      expect(api.createCourt).toHaveBeenCalledWith(2, { name: 'Court 9', sort_order: 2 }),
     );
     expect(await screen.findByText('Court 9')).toBeInTheDocument();
   });
@@ -96,22 +102,73 @@ describe('CourtAdmin', () => {
     await waitFor(() => expect(api.updateCourt).toHaveBeenCalledWith(1, { is_active: false }));
   });
 
-  it('edits the name and sort order', async () => {
+  it('renames in place', async () => {
     const u = userEvent.setup();
     api.courts.mockResolvedValue(page([court(1, 1)]) as never);
-    api.updateCourt.mockResolvedValue(court(1, 7, { name: 'Centre' }) as never);
+    api.updateCourt.mockResolvedValue(court(1, 1, { name: 'Centre' }) as never);
     setup();
-    await u.click(await screen.findByRole('button', { name: 'Edit Court 1' }));
+    await u.click(await screen.findByRole('button', { name: 'Rename Court 1' }));
     const name = screen.getByLabelText('Court 1 name');
     await u.clear(name);
     await u.type(name, 'Centre');
-    const order = screen.getByLabelText('Court 1 sort order');
-    await u.clear(order);
-    await u.type(order, '7');
     await u.click(screen.getByRole('button', { name: 'Save' }));
-    await waitFor(() =>
-      expect(api.updateCourt).toHaveBeenCalledWith(1, { name: 'Centre', sort_order: 7 }),
+    await waitFor(() => expect(api.updateCourt).toHaveBeenCalledWith(1, { name: 'Centre' }));
+  });
+
+  it('moves a court by renumbering the courts whose position changed', async () => {
+    const u = userEvent.setup();
+    api.courts.mockResolvedValue(page([court(1, 1), court(2, 2), court(3, 3)]) as never);
+    api.updateCourt.mockResolvedValue(court(1, 1) as never);
+    setup();
+    expect(await screen.findByRole('button', { name: 'Move Court 1 earlier' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Move Court 3 later' })).toBeDisabled();
+    await u.click(screen.getByRole('button', { name: 'Move Court 2 earlier' }));
+    await waitFor(() => expect(api.updateCourt).toHaveBeenCalledTimes(2));
+    expect(api.updateCourt).toHaveBeenCalledWith(2, { sort_order: 1 });
+    expect(api.updateCourt).toHaveBeenCalledWith(1, { sort_order: 2 });
+  });
+
+  it('shows the rate this hour and today’s booked hours, ignoring lapsed holds', async () => {
+    vi.useFakeTimers({ toFake: ['Date'], now: new Date('2026-10-23T04:30:00Z') }); // 12:30 Manila
+    api.courts.mockResolvedValue(page([court(1, 1)]) as never);
+    api.dayPrices.mockResolvedValue(
+      Array.from({ length: 24 }, (_, hour) => ({
+        starts_at: '',
+        hour,
+        price_centavos: hour === 12 ? 50_000 : 40_000,
+      })) as never,
     );
+    const slot = (h: number) => ({
+      starts_at: `2026-10-23T${String(h).padStart(2, '0')}:00:00+08:00`,
+      price_centavos: 0,
+    });
+    const row = (over: object) => ({
+      court_id: 1,
+      type: 'WALK_IN',
+      booking_status: 'CONFIRMED',
+      expires_at: null,
+      slots: [slot(8), slot(9)],
+      ...over,
+    });
+    vi.mocked(adminBookingsApi.day).mockResolvedValue({
+      data: [
+        row({}),
+        row({ booking_status: 'PENDING', expires_at: '2026-10-23T04:40:00Z', slots: [slot(14)] }),
+        row({ booking_status: 'PENDING', expires_at: '2026-10-23T04:00:00Z', slots: [slot(15)] }),
+        row({ booking_status: 'CANCELLED', slots: [slot(16)] }),
+        row({ type: 'MAINTENANCE', slots: [slot(17)] }),
+      ],
+      total: 5,
+      page: 1,
+      limit: 200,
+      has_more: false,
+    } as never);
+    setup(['COURT:Manage', 'PRICE:Manage', 'BOOKING:ReadAny']);
+    expect(await screen.findByText('₱500')).toBeInTheDocument();
+    expect(await screen.findByText('3 h')).toBeInTheDocument();
+    expect(api.dayPrices).toHaveBeenCalledWith(1, '2026-10-23');
+    expect(adminBookingsApi.day).toHaveBeenCalledWith(2, '2026-10-23');
+    vi.useRealTimers();
   });
 
   it('a rename also refreshes the single court and the catalog courts', async () => {
@@ -120,7 +177,7 @@ describe('CourtAdmin', () => {
     api.courts.mockResolvedValue(page([court(1, 1)]) as never);
     api.updateCourt.mockResolvedValue(court(1, 1, { name: 'Centre' }) as never);
     setup();
-    await u.click(await screen.findByRole('button', { name: 'Edit Court 1' }));
+    await u.click(await screen.findByRole('button', { name: 'Rename Court 1' }));
     const name = screen.getByLabelText('Court 1 name');
     await u.clear(name);
     await u.type(name, 'Centre');
@@ -137,8 +194,9 @@ describe('CourtAdmin', () => {
       new ApiError(422, { detail: 'sort_order must be at most 10000', code: 'V', request_id: 'r' }),
     );
     setup();
-    await u.type(await screen.findByLabelText('Name'), 'X');
-    await u.click(screen.getByRole('button', { name: 'Add court' }));
+    await u.click(await screen.findByRole('button', { name: 'Add court' }));
+    await u.type(screen.getByLabelText('Name'), 'X');
+    await u.click(screen.getByRole('button', { name: 'Create court' }));
     expect(await screen.findByText('sort_order must be at most 10000')).toBeInTheDocument();
   });
 

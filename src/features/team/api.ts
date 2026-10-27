@@ -4,9 +4,12 @@ import { UserPageSchema, UserSchema, type Invite, type User, type UserPage } fro
 const PAGE_SIZE = 20;
 
 export const teamApi = {
-  list(page: number, client: ApiClient = apiClient()): Promise<UserPage> {
+  /** `q` matches name or email on the server; blank lists everyone. */
+  list(page: number, q = '', client: ApiClient = apiClient()): Promise<UserPage> {
     return client
-      .get<unknown>('/admin/users', { params: { page, limit: PAGE_SIZE } })
+      .get<unknown>('/admin/users', {
+        params: { page, limit: PAGE_SIZE, ...(q ? { q } : {}) },
+      })
       .then((r) => UserPageSchema.parse(r));
   },
 

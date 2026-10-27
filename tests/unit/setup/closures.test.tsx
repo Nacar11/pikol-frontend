@@ -163,11 +163,31 @@ describe('ClosureForm', () => {
     expect(screen.getByLabelText('End hour')).toHaveValue('0');
   });
 
+  it('a preset fills the range and the summary counts its hours', async () => {
+    vi.useFakeTimers({ toFake: ['Date'], now: NOW });
+    const u = userEvent.setup();
+    renderPage();
+    await u.click(await screen.findByRole('button', { name: 'All day tomorrow' }));
+    expect(screen.getByLabelText('Start day')).toHaveValue('2026-10-24');
+    expect(screen.getByLabelText('Start hour')).toHaveValue('0');
+    expect(screen.getByLabelText('End day')).toHaveValue('2026-10-25');
+    expect(screen.getByLabelText('End hour')).toHaveValue('0');
+    expect(screen.getByText('24 h')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'All day tomorrow' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await u.click(screen.getByRole('button', { name: 'Next 2 hours' }));
+    expect(screen.getByText('Fri 23 Oct · 1 PM – 3 PM')).toBeInTheDocument();
+    await u.click(screen.getByRole('button', { name: 'Maintenance' }));
+    expect(screen.getByLabelText('Reason')).toHaveValue('Maintenance');
+  });
+
   it('Select all checks every active court', async () => {
     const u = userEvent.setup();
     api.closeCourts.mockResolvedValue([] as never);
     renderPage();
-    await u.click(await screen.findByLabelText('Select all'));
+    await u.click(await screen.findByRole('button', { name: 'Select all' }));
     expect(screen.getByLabelText('Court 1')).toBeChecked();
     expect(screen.getByLabelText('Court 2')).toBeChecked();
     await fill('2026-10-23', '8', '2026-10-23', '10');
@@ -233,7 +253,7 @@ describe('ClosureForm', () => {
   it('is gated on CLOSURE:Manage', async () => {
     renderPage(['BOOKING:ReadAny']);
     expect(await screen.findByText('Not available')).toBeInTheDocument();
-    expect(screen.queryByLabelText('Select all')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Select all' })).not.toBeInTheDocument();
   });
 });
 
@@ -248,11 +268,12 @@ describe('ClosureList', () => {
       ]) as never,
     );
     renderPage();
-    await screen.findByText('Soon');
+    const soon = await screen.findByText('Soon');
     expect(screen.queryByText('Already over')).not.toBeInTheDocument();
-    const items = screen.getAllByRole('listitem').map((li) => li.textContent);
-    expect(items[0]).toContain('Soon');
-    expect(items[1]).toContain('Later');
+    expect(
+      soon.compareDocumentPosition(screen.getByText('Later')) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(screen.getByText('2 closures')).toBeInTheDocument();
     expect(bookings.list).toHaveBeenCalledWith({
       venue_id: 2,
       type: 'MAINTENANCE',
@@ -273,7 +294,8 @@ describe('ClosureList', () => {
     });
     renderPage();
     const item = (await screen.findByText('Soon')).closest('li')!;
-    const submit = within(item).getByRole('button', { name: 'Reopen' });
+    await u.click(within(item).getByRole('button', { name: 'Reopen Soon' }));
+    const submit = within(item).getByRole('button', { name: 'Reopen court' });
     expect(submit).toBeDisabled();
     await u.type(within(item).getByLabelText('Why is the court reopening?'), 'Fixed early');
     await u.click(submit);
@@ -294,8 +316,37 @@ describe('ClosureList', () => {
     );
     renderPage();
     const item = (await screen.findByText('Soon')).closest('li')!;
+    await u.click(within(item).getByRole('button', { name: 'Reopen Soon' }));
     await u.type(within(item).getByLabelText('Why is the court reopening?'), 'x');
-    await u.click(within(item).getByRole('button', { name: 'Reopen' }));
+    await u.click(within(item).getByRole('button', { name: 'Reopen court' }));
     expect(await screen.findByText('Already reopened.')).toBeInTheDocument();
+  });
+
+  it('shows rows closed together as one closure and reopens every court in it', async () => {
+    vi.useFakeTimers({ toFake: ['Date'], now: NOW });
+    const u = userEvent.setup();
+    const range = ['2026-10-24T08:00:00+08:00', '2026-10-24T14:00:00+08:00'] as const;
+    bookings.list.mockResolvedValue(
+      bookingPage([
+        closure(4, ...range, 'Inter-club'),
+        { ...closure(5, ...range, 'Inter-club'), court_id: 2, court_name: 'Court 2' },
+      ]) as never,
+    );
+    bookings.reopenClosure.mockResolvedValue({} as never);
+    renderPage();
+    const item = (await screen.findByText('Inter-club')).closest('li')!;
+    expect(screen.getByText('1 closure')).toBeInTheDocument();
+    expect(within(item).getByText('8 AM – 2 PM · 6 h')).toBeInTheDocument();
+    expect(within(item).getByText('Court 1')).toBeInTheDocument();
+    expect(within(item).getByText('Court 2')).toBeInTheDocument();
+    expect(
+      within(item).getByRole('link', { name: 'View Inter-club on the schedule' }),
+    ).toHaveAttribute('href', '/staff/schedule?venue=2&date=2026-10-24');
+    await u.click(within(item).getByRole('button', { name: 'Reopen Inter-club' }));
+    await u.type(within(item).getByLabelText('Why are the courts reopening?'), 'Cancelled');
+    await u.click(within(item).getByRole('button', { name: 'Reopen courts' }));
+    await waitFor(() => expect(bookings.reopenClosure).toHaveBeenCalledTimes(2));
+    expect(bookings.reopenClosure).toHaveBeenCalledWith(4, 'Cancelled');
+    expect(bookings.reopenClosure).toHaveBeenCalledWith(5, 'Cancelled');
   });
 });

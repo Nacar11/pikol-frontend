@@ -23,7 +23,10 @@ const EMPTY: Fields = { email: '', first_name: '', last_name: '', mobile: '' };
  * owner is offered the venue's master group, and only the owner's invite
  * goes to /admin/users; nobody's form has a venue or role field.
  */
-export function InviteForm() {
+export function InviteForm({
+  onSent,
+  onCancel,
+}: { onSent?: () => void; onCancel?: () => void } = {}) {
   const isOwner = (usePermissions().data ?? []).includes('VENUE:Manage');
   const { venueId, venue } = useStaffVenue();
   const groups = useGroups({ venue_id: venueId ?? undefined }, venueId !== null);
@@ -63,14 +66,15 @@ export function InviteForm() {
               toast.success(`Invitation sent to ${f.email.trim()}`);
               setF(EMPTY);
               setGroupId('');
+              onSent?.();
             },
           },
         );
       }}
-      className="grid gap-3 rounded-md border border-border bg-surface p-4"
+      className="grid max-w-3xl gap-4 rounded-lg border border-border bg-surface p-5 sm:grid-cols-2"
     >
-      <h2 className="font-semibold">Invite someone new</h2>
-      <div className="space-y-1">
+      <h2 className="font-semibold sm:col-span-2">Invite someone new</h2>
+      <div className="space-y-1 sm:col-span-2">
         <Label htmlFor="invite-email">Email</Label>
         <Input
           id="invite-email"
@@ -121,10 +125,21 @@ export function InviteForm() {
           ))}
         </select>
       </div>
-      {invite.isError && !exists && <Alert tone="error">{errorMessage(invite.error)}</Alert>}
-      <Button type="submit" loading={invite.isPending} disabled={!ready}>
-        Send invitation
-      </Button>
+      {invite.isError && !exists && (
+        <Alert tone="error" className="sm:col-span-2">
+          {errorMessage(invite.error)}
+        </Alert>
+      )}
+      <div className="flex gap-2 sm:col-span-2">
+        <Button type="submit" loading={invite.isPending} disabled={!ready}>
+          Send invitation
+        </Button>
+        {onCancel && (
+          <Button type="button" variant="ghost" onClick={onCancel}>
+            Cancel
+          </Button>
+        )}
+      </div>
     </form>
   );
 }

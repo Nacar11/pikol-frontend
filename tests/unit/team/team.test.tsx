@@ -106,7 +106,8 @@ const MANAGER = ['USER:Manage'];
 const OWNER = ['USER:Manage', 'VENUE:Manage'];
 
 async function fillInvite(u: ReturnType<typeof userEvent.setup>, mobile?: string) {
-  await u.type(await screen.findByLabelText('Email'), 'new@x.ph');
+  await u.click(await screen.findByRole('button', { name: 'Invite staff' }));
+  await u.type(screen.getByLabelText('Email'), 'new@x.ph');
   await u.type(screen.getByLabelText('First name'), 'Ana');
   await u.type(screen.getByLabelText('Last name'), 'Cruz');
   if (mobile) await u.type(screen.getByLabelText('Mobile (optional)'), mobile);
@@ -271,7 +272,7 @@ describe('TeamList', () => {
     await u.click(await screen.findByRole('button', { name: /Resend/ }));
     expect(await screen.findByText('Already accepted.')).toBeInTheDocument();
     await waitFor(() => expect(screen.queryByRole('button', { name: /Resend/ })).toBeNull());
-    expect(screen.queryByText(/Invited/)).not.toBeInTheDocument();
+    expect(within(screen.getByRole('table')).queryByText(/Invited/)).not.toBeInTheDocument();
   });
 
   it('deactivate patches is_active false, then offers Reactivate', async () => {
@@ -287,6 +288,33 @@ describe('TeamList', () => {
     expect(
       await screen.findByRole('button', { name: 'Reactivate First2 Last2' }),
     ).toBeInTheDocument();
+  });
+
+  it('searches by name or email on the server', async () => {
+    const u = userEvent.setup();
+    users = [person(1), person(2)];
+    setup(MANAGER);
+    await screen.findByText('First1 Last1');
+    await u.type(screen.getByLabelText('Search name or email'), 'ana');
+    await waitFor(() =>
+      expect(http.get).toHaveBeenCalledWith('/admin/users', {
+        params: { page: 1, limit: 20, q: 'ana' },
+      }),
+    );
+  });
+
+  it('filters by status, with counts once every page is loaded', async () => {
+    const u = userEvent.setup();
+    users = [person(1), person(2, { email_verified_at: null }), person(3, { is_active: false })];
+    setup(MANAGER);
+    await screen.findByText('First1 Last1');
+    expect(screen.getByText('1 active')).toBeInTheDocument();
+    const invited = screen.getByRole('button', { name: 'Invited 1' });
+    await u.click(invited);
+    expect(invited).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByText('First2 Last2')).toBeInTheDocument();
+    expect(screen.queryByText('First1 Last1')).not.toBeInTheDocument();
+    expect(screen.queryByText('First3 Last3')).not.toBeInTheDocument();
   });
 
   it('your own row has no deactivate', async () => {

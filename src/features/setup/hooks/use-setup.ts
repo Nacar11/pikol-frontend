@@ -92,6 +92,18 @@ export function useUpdateCourt(venueId: number) {
   });
 }
 
+/** Moves courts by rewriting `sort_order`, one PATCH per court that moved.
+ * There is no bulk route; the list is refetched however far it got. */
+export function useReorderCourts(venueId: number) {
+  const invalidate = useInvalidateCourts(venueId);
+  return useMutation({
+    mutationFn: async (moves: { id: number; sort_order: number }[]) => {
+      for (const m of moves) await setupApi.updateCourt(m.id, { sort_order: m.sort_order });
+    },
+    onSettled: invalidate,
+  });
+}
+
 export function useAdminCourt(courtId: number) {
   const { status } = useAuth();
   return useQuery({
@@ -146,12 +158,23 @@ export function useDeletePriceRule(courtId: number) {
   });
 }
 
-export function useDayPrices(courtId: number, date: string) {
+export function useDayPrices(courtId: number, date: string, enabled = true) {
   const { status } = useAuth();
   return useQuery({
     queryKey: setupKeys.prices(courtId, date),
     queryFn: () => setupApi.dayPrices(courtId, date),
-    enabled: status === 'authenticated',
+    enabled: status === 'authenticated' && enabled,
+  });
+}
+
+/** One venue-day of bookings, under the Schedule's own key so the two
+ * screens share the cache. Needs BOOKING:ReadAny. */
+export function useVenueDayBookings(venueId: number, date: string, enabled = true) {
+  const { status } = useAuth();
+  return useQuery({
+    queryKey: adminBookingKeys.day(venueId, date),
+    queryFn: () => adminBookingsApi.day(venueId, date),
+    enabled: status === 'authenticated' && enabled,
   });
 }
 
