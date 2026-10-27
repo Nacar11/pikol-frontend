@@ -3,20 +3,24 @@ import { ApiClient, apiClient } from '@/lib/api-client';
 import {
   ClosedCourtsSchema,
   CourtPageSchema,
+  CourtSummariesSchema,
   CourtSchema,
   PriceRuleSchema,
   PriceRulesSchema,
   ResolvedPricesSchema,
   VenuePageSchema,
   VenueSchema,
+  VenueSummariesSchema,
   type ClosureRequest,
   type Court,
+  type CourtSummary,
   type CourtCreate,
   type CourtUpdate,
   type PriceRule,
   type PriceRuleCreate,
   type ResolvedPrice,
   type VenueCreate,
+  type VenueSummary,
   type VenueUpdate,
 } from './schemas';
 import type { Page } from '@/lib/page';
@@ -52,6 +56,17 @@ export const setupApi = {
 
   updateCourt(id: number, body: CourtUpdate, client: ApiClient = apiClient()): Promise<Court> {
     return client.patch<unknown>(`/admin/courts/${id}`, body).then((r) => CourtSchema.parse(r));
+  },
+
+  /** Each court's rate this hour and hours booked today, in one request. */
+  courtSummaries(venueId: number, client: ApiClient = apiClient()): Promise<CourtSummary[]> {
+    return client
+      .get<unknown>(`/admin/venues/${venueId}/courts/summary`)
+      .then((r) => CourtSummariesSchema.parse(r));
+  },
+
+  venueSummaries(client: ApiClient = apiClient()): Promise<VenueSummary[]> {
+    return client.get<unknown>('/admin/venues/summary').then((r) => VenueSummariesSchema.parse(r));
   },
 
   court(id: number, client: ApiClient = apiClient()): Promise<Court> {

@@ -7,4 +7,7 @@ export const setupKeys = {
   /** Every date of a court: a prefix for invalidation. */
   allPrices: (courtId: number) => [...setupKeys.all, 'prices', courtId] as const,
   prices: (courtId: number, date: string) => [...setupKeys.all, 'prices', courtId, date] as const,
+  summaries: () => [...setupKeys.all, 'summaries'] as const,
+  courtSummaries: (venueId: number) => [...setupKeys.summaries(), 'courts', venueId] as const,
+  venueSummaries: () => [...setupKeys.summaries(), 'venues'] as const,
 };

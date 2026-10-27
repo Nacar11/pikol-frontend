@@ -14,15 +14,15 @@ import type { Venue } from '@/features/catalog';
 import { StaffGate } from '@/features/staff';
 import { cn } from '@/lib/cn';
 import { errorMessage } from '@/lib/api-error';
-import { manilaToday } from '@/lib/manila';
-import { DAY_HOURS, bookedHours } from '../booked-hours';
 import {
-  useAdminCourts,
   useAdminVenues,
   useCreateVenue,
   useUpdateVenue,
-  useVenueDayBookings,
+  useVenueSummaries,
 } from '../hooks/use-setup';
+import type { VenueSummary } from '../schemas';
+
+const DAY_HOURS = 24;
 
 export function VenueAdmin() {
   return (
@@ -34,8 +34,8 @@ export function VenueAdmin() {
 
 function Venues() {
   const permissions = usePermissions().data ?? [];
-  const [today] = useState(() => manilaToday());
   const { data, error } = useAdminVenues();
+  const summaries = useVenueSummaries();
   const create = useCreateVenue();
   const update = useUpdateVenue();
   const [adding, setAdding] = useState(false);
@@ -76,9 +76,8 @@ function Venues() {
             <VenueCard
               key={v.id}
               venue={v}
-              today={today}
+              summary={summaries.data?.find((s) => s.venue_id === v.id)}
               canCourts={permissions.includes('COURT:Manage')}
-              canBookings={permissions.includes('BOOKING:ReadAny')}
               editing={editingId === v.id}
               onEdit={(on) => setEditingId(on ? v.id : null)}
               onSave={(body) =>
@@ -102,9 +101,8 @@ function Venues() {
 
 function VenueCard({
   venue,
-  today,
+  summary,
   canCourts,
-  canBookings,
   editing,
   onEdit,
   onSave,
@@ -112,21 +110,16 @@ function VenueCard({
   onToggleActive,
 }: {
   venue: Venue;
-  today: string;
+  summary: VenueSummary | undefined;
   canCourts: boolean;
-  canBookings: boolean;
   editing: boolean;
   onEdit: (on: boolean) => void;
   onSave: (body: { name: string; address: string | null }) => void;
   saving: boolean;
   onToggleActive: () => void;
 }) {
-  const courts = useAdminCourts(canCourts ? venue.id : null);
-  const day = useVenueDayBookings(venue.id, today, canBookings && venue.is_active);
-  const activeCourts = courts.data?.data.filter((c) => c.is_active).length;
-  const booked = day.data
-    ? [...bookedHours(day.data.data, today).values()].reduce((a, b) => a + b, 0)
-    : undefined;
+  const activeCourts = summary?.active_courts;
+  const booked = venue.is_active ? summary?.booked_hours : undefined;
   const capacity = activeCourts === undefined ? undefined : activeCourts * DAY_HOURS;
 
   return (

@@ -9,22 +9,20 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { PageLoading } from '@/components/ui/page-loading';
-import { usePermissions } from '@/features/auth';
 import { StaffGate, useStaffVenue } from '@/features/staff';
 import { cn } from '@/lib/cn';
 import { errorMessage } from '@/lib/api-error';
-import { manilaHourNow, manilaToday } from '@/lib/manila';
 import { formatPeso } from '@/lib/money';
-import { DAY_HOURS, bookedHours } from '../booked-hours';
 import {
   useAdminCourts,
+  useCourtSummaries,
   useCreateCourt,
-  useDayPrices,
   useReorderCourts,
   useUpdateCourt,
-  useVenueDayBookings,
 } from '../hooks/use-setup';
-import type { Court } from '../schemas';
+import type { Court, CourtSummary } from '../schemas';
+
+const DAY_HOURS = 24;
 
 export function CourtAdmin() {
   return (
@@ -45,10 +43,8 @@ function Courts() {
 }
 
 function VenueCourts({ venueId }: { venueId: number }) {
-  const permissions = usePermissions().data ?? [];
-  const [today] = useState(() => manilaToday());
   const { data, error } = useAdminCourts(venueId);
-  const day = useVenueDayBookings(venueId, today, permissions.includes('BOOKING:ReadAny'));
+  const summaries = useCourtSummaries(venueId);
   const create = useCreateCourt(venueId);
   const update = useUpdateCourt(venueId);
   const reorder = useReorderCourts(venueId);
@@ -57,7 +53,7 @@ function VenueCourts({ venueId }: { venueId: number }) {
 
   const courts = [...(data?.data ?? [])].sort((a, b) => a.sort_order - b.sort_order || a.id - b.id);
   const active = courts.filter((c) => c.is_active);
-  const booked = day.data ? bookedHours(day.data.data, today) : null;
+  const summaryOf = (id: number) => summaries.data?.find((s) => s.court_id === id);
 
   function move(index: number, by: -1 | 1) {
     const next = [...courts];
@@ -103,9 +99,7 @@ function VenueCourts({ venueId }: { venueId: number }) {
               key={c.id}
               court={c}
               position={c.is_active ? active.indexOf(c) + 1 : null}
-              today={today}
-              canPrice={permissions.includes('PRICE:Manage')}
-              booked={booked ? (booked.get(c.id) ?? 0) : null}
+              summary={summaryOf(c.id)}
               editing={editingId === c.id}
               onEdit={(on) => setEditingId(on ? c.id : null)}
               onRename={(name) =>
@@ -144,9 +138,7 @@ function VenueCourts({ venueId }: { venueId: number }) {
 function CourtCard({
   court,
   position,
-  today,
-  canPrice,
-  booked,
+  summary,
   editing,
   onEdit,
   onRename,
@@ -159,9 +151,7 @@ function CourtCard({
 }: {
   court: Court;
   position: number | null;
-  today: string;
-  canPrice: boolean;
-  booked: number | null;
+  summary: CourtSummary | undefined;
   editing: boolean;
   onEdit: (on: boolean) => void;
   onRename: (name: string) => void;
@@ -172,8 +162,8 @@ function CourtCard({
   first: boolean;
   last: boolean;
 }) {
-  const prices = useDayPrices(court.id, today, canPrice && court.is_active);
-  const rate = prices.data?.find((p) => p.hour === manilaHourNow())?.price_centavos;
+  const rate = summary?.rate_centavos ?? null;
+  const booked = summary?.booked_hours ?? null;
   const arrow =
     'inline-flex size-11 items-center justify-center border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40 md:size-8';
 
@@ -241,7 +231,7 @@ function CourtCard({
             Rate now
           </dt>
           <dd className="text-lg font-semibold tabular-nums">
-            {rate === undefined ? (
+            {rate === null ? (
               '—'
             ) : (
               <>

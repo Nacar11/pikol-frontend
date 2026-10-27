@@ -37,6 +37,20 @@ export type PriceRuleCreate = {
   price_centavos: number;
 };
 
+export const CourtSummariesSchema = z.array(
+  z.object({
+    court_id: z.number(),
+    rate_centavos: z.number().nullable(),
+    booked_hours: z.number().nullable(),
+  }),
+);
+export type CourtSummary = z.infer<typeof CourtSummariesSchema>[number];
+
+export const VenueSummariesSchema = z.array(
+  z.object({ venue_id: z.number(), active_courts: z.number(), booked_hours: z.number() }),
+);
+export type VenueSummary = z.infer<typeof VenueSummariesSchema>[number];
+
 export type ClosureRequest = {
   court_ids: number[];
   starts_at: string;

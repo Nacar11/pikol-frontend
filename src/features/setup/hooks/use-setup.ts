@@ -32,6 +32,7 @@ function useInvalidateVenues() {
   const qc = useQueryClient();
   return () => {
     void qc.invalidateQueries({ queryKey: setupKeys.venues() });
+    void qc.invalidateQueries({ queryKey: setupKeys.summaries() });
     // The sidebar's venue switcher reads the caller's own venues.
     void qc.invalidateQueries({ queryKey: staffKeys.myVenues() });
   };
@@ -66,6 +67,7 @@ function useInvalidateCourts(venueId: number) {
   const qc = useQueryClient();
   return () => {
     void qc.invalidateQueries({ queryKey: setupKeys.courts(venueId) });
+    void qc.invalidateQueries({ queryKey: setupKeys.summaries() });
     void qc.invalidateQueries({ queryKey: catalogKeys.courts(venueId) });
     void qc.invalidateQueries({ queryKey: availabilityKeys.all });
   };
@@ -129,6 +131,7 @@ function useInvalidatePricing(courtId: number) {
   return () => {
     void qc.invalidateQueries({ queryKey: setupKeys.rules(courtId) });
     void qc.invalidateQueries({ queryKey: setupKeys.allPrices(courtId) });
+    void qc.invalidateQueries({ queryKey: setupKeys.summaries() });
     void qc.invalidateQueries({ queryKey: availabilityKeys.all });
   };
 }
@@ -158,23 +161,34 @@ export function useDeletePriceRule(courtId: number) {
   });
 }
 
-export function useDayPrices(courtId: number, date: string, enabled = true) {
+export function useDayPrices(courtId: number, date: string) {
   const { status } = useAuth();
   return useQuery({
     queryKey: setupKeys.prices(courtId, date),
     queryFn: () => setupApi.dayPrices(courtId, date),
-    enabled: status === 'authenticated' && enabled,
+    enabled: status === 'authenticated',
   });
 }
 
-/** One venue-day of bookings, under the Schedule's own key so the two
- * screens share the cache. Needs BOOKING:ReadAny. */
-export function useVenueDayBookings(venueId: number, date: string, enabled = true) {
+/** Bookings change on the Schedule, which cannot reach these keys, so a
+ * summary refetches every time a page mounts. */
+export function useCourtSummaries(venueId: number) {
   const { status } = useAuth();
   return useQuery({
-    queryKey: adminBookingKeys.day(venueId, date),
-    queryFn: () => adminBookingsApi.day(venueId, date),
-    enabled: status === 'authenticated' && enabled,
+    queryKey: setupKeys.courtSummaries(venueId),
+    queryFn: () => setupApi.courtSummaries(venueId),
+    enabled: status === 'authenticated',
+    staleTime: 0,
+  });
+}
+
+export function useVenueSummaries() {
+  const { status } = useAuth();
+  return useQuery({
+    queryKey: setupKeys.venueSummaries(),
+    queryFn: () => setupApi.venueSummaries(),
+    enabled: status === 'authenticated',
+    staleTime: 0,
   });
 }
 

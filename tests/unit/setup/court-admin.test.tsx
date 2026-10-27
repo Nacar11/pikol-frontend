@@ -13,7 +13,13 @@ import { ApiError } from '@/lib/api-client';
 import { renderWithAuth, setSearch } from '../auth/render';
 
 vi.mock('@/features/setup/api', () => ({
-  setupApi: { courts: vi.fn(), createCourt: vi.fn(), updateCourt: vi.fn(), dayPrices: vi.fn() },
+  setupApi: {
+    courts: vi.fn(),
+    createCourt: vi.fn(),
+    updateCourt: vi.fn(),
+    dayPrices: vi.fn(),
+    courtSummaries: vi.fn(),
+  },
 }));
 vi.mock('@/features/admin-bookings/api', () => ({ adminBookingsApi: { day: vi.fn() } }));
 vi.mock('@/features/auth/api', () => ({ authApi: { permissions: vi.fn() } }));
@@ -128,47 +134,19 @@ describe('CourtAdmin', () => {
     expect(api.updateCourt).toHaveBeenCalledWith(1, { sort_order: 2 });
   });
 
-  it('shows the rate this hour and today’s booked hours, ignoring lapsed holds', async () => {
-    vi.useFakeTimers({ toFake: ['Date'], now: new Date('2026-10-23T04:30:00Z') }); // 12:30 Manila
-    api.courts.mockResolvedValue(page([court(1, 1)]) as never);
-    api.dayPrices.mockResolvedValue(
-      Array.from({ length: 24 }, (_, hour) => ({
-        starts_at: '',
-        hour,
-        price_centavos: hour === 12 ? 50_000 : 40_000,
-      })) as never,
-    );
-    const slot = (h: number) => ({
-      starts_at: `2026-10-23T${String(h).padStart(2, '0')}:00:00+08:00`,
-      price_centavos: 0,
-    });
-    const row = (over: object) => ({
-      court_id: 1,
-      type: 'WALK_IN',
-      booking_status: 'CONFIRMED',
-      expires_at: null,
-      slots: [slot(8), slot(9)],
-      ...over,
-    });
-    vi.mocked(adminBookingsApi.day).mockResolvedValue({
-      data: [
-        row({}),
-        row({ booking_status: 'PENDING', expires_at: '2026-10-23T04:40:00Z', slots: [slot(14)] }),
-        row({ booking_status: 'PENDING', expires_at: '2026-10-23T04:00:00Z', slots: [slot(15)] }),
-        row({ booking_status: 'CANCELLED', slots: [slot(16)] }),
-        row({ type: 'MAINTENANCE', slots: [slot(17)] }),
-      ],
-      total: 5,
-      page: 1,
-      limit: 200,
-      has_more: false,
-    } as never);
+  it('shows each court’s rate and booked hours from one summary request', async () => {
+    api.courts.mockResolvedValue(page([court(1, 1), court(2, 2)]) as never);
+    api.courtSummaries.mockResolvedValue([
+      { court_id: 1, rate_centavos: 50_000, booked_hours: 3 },
+      { court_id: 2, rate_centavos: null, booked_hours: null },
+    ] as never);
     setup(['COURT:Manage', 'PRICE:Manage', 'BOOKING:ReadAny']);
     expect(await screen.findByText('₱500')).toBeInTheDocument();
-    expect(await screen.findByText('3 h')).toBeInTheDocument();
-    expect(api.dayPrices).toHaveBeenCalledWith(1, '2026-10-23');
-    expect(adminBookingsApi.day).toHaveBeenCalledWith(2, '2026-10-23');
-    vi.useRealTimers();
+    expect(screen.getByText('3 h')).toBeInTheDocument();
+    expect(api.courtSummaries).toHaveBeenCalledTimes(1);
+    expect(api.courtSummaries).toHaveBeenCalledWith(2);
+    expect(api.dayPrices).not.toHaveBeenCalled();
+    expect(adminBookingsApi.day).not.toHaveBeenCalled();
   });
 
   it('a rename also refreshes the single court and the catalog courts', async () => {
