@@ -32,44 +32,61 @@ ESLint enforces the barrel rule and forbids inline `queryKey` arrays.
 
 ## Slices and routes
 
+**The web is the staff console only** (ADR 0003). Customers book in a mobile
+app; the player routes were removed and the backend's customer routes stay
+for that app. A signed-in non-staff user lands on `/customer-app`.
+
 | Slice | Owns |
 |---|---|
-| `auth` | sign-in/registration/recovery, `usePermissions`, `canBookOnline` |
-| `catalog` | the venue list (`GET /venues`) |
-| `availability` | the day grid and slot selection |
-| `bookings` | holds, the pay page, the checkout return, My Bookings |
-| `admin-bookings` | the staff booking reads and actions (`/admin/bookings`, mark-paid, outcome, cancel, resolve) |
-| `staff` | `StaffGate` (permission gate), `StaffNav`, `VenuePicker`, `useStaffVenue`, `STAFF_LINKS` |
+| `auth` | sign-in and recovery screens, `usePermissions`, `landingPath`, the user/group schemas |
+| `catalog` | the per-venue court list (`GET /venues/{id}/courts`) |
+| `availability` | the day availability read and the slot-selection reducer |
+| `bookings` | the booking schema and `StatusBadge`, reused by the console |
+| `admin-bookings` | the Schedule (header, two-week strip, court grid, day-at-a-glance), the occupancy read, booking actions, the resolution queue |
+| `staff` | `StaffShell` (the sidebar), `StaffOnly`, `StaffGate`, `StaffVenueSync`, `useStaffVenue`, `VenueSwitcher`, `STAFF_LINKS` |
 | `setup` | venues, courts, price rules and the price preview, closures |
-| `team` | staff accounts: invites, resend/revoke, deactivate |
+| `team` | Staff accounts: invites into a group, resend/revoke, deactivate |
+| `groups` | user groups: Setup → Venue staff and Masters → User groups |
 | `parameters` | the owner's business-parameters screen |
 
-Routes: `/venues`, `/venues/[venueId]?date=`, `/bookings` (mine),
-`/bookings/[bookingId]` (pay page), `/checkout/return?booking_id=`.
-`components/layout/app-nav.tsx` shows the player links when `canBookOnline`.
+Routes: `/login`, `/forgot-password`, `/reset-password`, `/verify-email`,
+`/accept-invite`, `/customer-app`, and the staff console under `/staff`
+(every page gated on a permission code, never a group name): `/staff`
+redirects to `/staff/schedule`; the others are
+`/staff/schedule?venue=&date=`, `/staff/bookings/[bookingId]`,
+`/staff/resolution`, `/staff/closures`, `/staff/courts`,
+`/staff/courts/[courtId]/pricing`, `/staff/venue-staff`, `/staff/users`
+(Staff accounts), `/staff/venues`, `/staff/parameters` and `/staff/groups`
+(owner only, gated on `VENUE:Manage`).
 
-Staff console (every page gated on a permission code, never a role): `/staff`
-redirects to `/staff/schedule`; the others are `/staff/schedule?venue=&date=`,
-`/staff/bookings/[bookingId]`, `/staff/resolution`, `/staff/venues`,
-`/staff/courts?venue=`, `/staff/courts/[courtId]/pricing`,
-`/staff/closures?venue=`, `/staff/users` and `/staff/parameters`. A user with a
-`venue_id` works at that venue only; the owner picks one with `?venue=`.
+### The active venue
+
+Permissions are per venue, so **every staff request carries `X-Venue-ID`**.
+`useStaffVenue` picks it from `GET /users/me/venues`: `?venue=` first, then the
+last choice on this browser, then the first. `StaffVenueSync` (in the staff
+layout) injects it into `lib/api-client` as a venue provider — written during
+render so children's first fetches already carry it — and resets every query
+when it changes, permissions included.
 
 ## Non-negotiables
 
 - **Every response is zod-parsed in `api.ts`.** Components never see raw JSON.
-- **Gate UI on `GET /users/me/permissions`**, never on a role parsed
-  client-side. `features/auth` exposes `usePermissions()`.
+- **Gate UI on `GET /users/me/permissions`**, never on a group name parsed
+  client-side. `features/auth` exposes `usePermissions()`. "Is this the
+  owner?" is `permissions.includes('VENUE:Manage')` — an owner-only code.
 - **Branch on the error `code`, render the `detail`.** `lib/api-error.ts`
   understands both our envelope (`{detail, code, request_id}`) and FastAPI's
   validation shape (`{detail: [{msg}]}`).
 - **`lib/api-client` is feature-agnostic.** `AuthProvider` injects the access
-  token and the refresh handler; nothing else does.
+  token and the refresh handler, and `StaffVenueSync` the venue provider;
+  nothing else does.
+- **Black and white.** Tokens in `globals.css` are neutral; `destructive` is
+  the one hue, for errors and destructive actions only. Status is shape plus
+  a text label, never colour alone (`bg-hatch` is the one sanctioned pattern,
+  for a closed court-hour).
 - **All times render in Asia/Manila**, never browser-local (spec §8.2).
 - **Slot selection is never optimistic** — a 409 on a busy evening is an
   expected outcome (spec §8.2). Tap → server → then held.
-- **The browser redirect from checkout never confirms anything.** The
-  return page polls (and calls `refresh-payment`) — spec §8.2, ADR 0002.
 
 ## Auth
 
@@ -80,7 +97,7 @@ redirects to `/staff/schedule`; the others are `/staff/schedule?venue=&date=`,
   concurrent 401s into one refresh call. Never call `authApi.refresh` from
   anywhere but `AuthProvider`.
 - Login returns tokens only; the provider then loads `GET /users/me`.
-- Landing: `BOOKING:ReadAny` → `/staff`, otherwise `/venues`.
+- Landing: `BOOKING:ReadAny` → `/staff`, otherwise `/customer-app`.
 
 ## Env
 
