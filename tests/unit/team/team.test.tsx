@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { toast } from 'sonner';
+import { notify } from '@/components/ui/snackbar';
 import { authApi } from '@/features/auth/api';
 import { staffApi } from '@/features/staff/api';
 import { TeamList } from '@/features/team';
@@ -26,7 +26,7 @@ vi.mock('next/navigation', async () => ({
   ...(await import('../auth/render')).navigationMock,
   usePathname: () => '/staff/users',
 }));
-vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+vi.mock('@/components/ui/snackbar', () => ({ notify: { success: vi.fn(), error: vi.fn() } }));
 
 type U = {
   id: number;
@@ -167,7 +167,7 @@ describe('TeamList', () => {
     const [path, body] = http.post.mock.calls[0] as [string, Record<string, unknown>];
     expect(path).toBe('/admin/venue-staff');
     expect(body).toEqual({ email: 'new@x.ph', first_name: 'Ana', last_name: 'Cruz', group_id: 11 });
-    expect(toast.success).toHaveBeenCalledWith('Invitation sent to new@x.ph');
+    expect(notify.success).toHaveBeenCalledWith('Invitation sent to new@x.ph');
     expect(await screen.findByText('First9 Last9')).toBeInTheDocument();
   });
 
@@ -220,7 +220,7 @@ describe('TeamList', () => {
       '/staff/venue-staff',
     );
     expect(screen.getByLabelText('Email')).toHaveAttribute('aria-invalid', 'true');
-    expect(toast.success).not.toHaveBeenCalled();
+    expect(notify.success).not.toHaveBeenCalled();
   });
 
   it('an invited row offers Resend and Revoke, and Revoke calls DELETE', async () => {

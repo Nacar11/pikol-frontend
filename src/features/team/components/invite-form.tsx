@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { toast } from 'sonner';
+import { notify } from '@/components/ui/snackbar';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -62,7 +62,7 @@ export function InviteForm({
           },
           {
             onSuccess: () => {
-              toast.success(`Invitation sent to ${f.email.trim()}`);
+              notify.success(`Invitation sent to ${f.email.trim()}`);
               setF(EMPTY);
               setGroupId('');
               onSent?.();

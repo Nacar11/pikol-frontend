@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { toast } from 'sonner';
+import { notify } from '@/components/ui/snackbar';
 import { Alert } from '@/components/ui/alert';
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -33,7 +33,7 @@ export function MemberPanel({ group, readOnly }: { group: Group; readOnly: boole
       {
         onSuccess: (m) => {
           setEmail('');
-          toast.success(`${m.first_name} ${m.last_name} added to ${group.name}.`);
+          notify.success(`${m.first_name} ${m.last_name} added to ${group.name}.`);
         },
         onError: setAddError,
       },
@@ -131,10 +131,10 @@ function MemberRow({
                 removeMember.mutate(
                   { id: group.id, userId: member.user_id },
                   {
-                    onSuccess: () => toast.success(`${name} removed from ${group.name}.`),
+                    onSuccess: () => notify.success(`${name} removed from ${group.name}.`),
                     onError: (err) => {
                       setConfirming(false);
-                      toast.error(errorMessage(err));
+                      notify.error(errorMessage(err));
                     },
                   },
                 )

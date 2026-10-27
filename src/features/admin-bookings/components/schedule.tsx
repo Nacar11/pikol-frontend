@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { notify } from '@/components/ui/snackbar';
 import { Alert } from '@/components/ui/alert';
 import { PageLoading } from '@/components/ui/page-loading';
 import { usePermissions } from '@/features/auth';
@@ -131,7 +131,7 @@ function VenueDay({
     handled.current = newBooking;
     const next = nextOpen(data, date === manilaToday() ? manilaHourNow() : 0);
     if (next) setSelection(next);
-    else toast.info('No open hours left on this day.');
+    else notify.info('No open hours left on this day.');
   }, [newBooking, data, date]);
 
   function submit() {
@@ -142,10 +142,10 @@ function VenueDay({
       onSuccess: (booking) => {
         setSelection(null);
         setNotes('');
-        toast.success(`Walk-in booked · ${booking.reference_code}`);
+        notify.success(`Walk-in booked · ${booking.reference_code}`);
       },
       onError: (err) => {
-        toast.error(errorMessage(err));
+        notify.error(errorMessage(err));
         if (errorCode(err) === 'SLOT_UNAVAILABLE') {
           setSelection(null);
           void qc.invalidateQueries({ queryKey: availabilityKeys.day(venueId, date) });

@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { toast } from 'sonner';
+import { notify } from '@/components/ui/snackbar';
 import { useAcceptInvitation } from '../hooks/use-auth-mutations';
 import { NewPasswordForm } from './new-password-form';
 
@@ -25,7 +25,7 @@ export function AcceptInviteForm() {
           { token: token!, password },
           {
             onSuccess: () => {
-              toast.success('Account activated. Sign in to get started.');
+              notify.success('Account activated. Sign in to get started.');
               router.replace('/login');
             },
           },

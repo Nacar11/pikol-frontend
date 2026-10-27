@@ -23,7 +23,7 @@ vi.mock('next/navigation', async () => ({
   ...(await import('../auth/render')).navigationMock,
   usePathname: () => '/staff/groups',
 }));
-vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+vi.mock('@/components/ui/snackbar', () => ({ notify: { success: vi.fn(), error: vi.fn() } }));
 
 const OWNER = [
   'BOOKING:ReadAny',

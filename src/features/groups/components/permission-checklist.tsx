@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { toast } from 'sonner';
+import { notify } from '@/components/ui/snackbar';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { SectionLabel } from '@/components/ui/section-label';
@@ -64,7 +64,7 @@ export function PermissionChecklist({
       {
         onSuccess: (updated) => {
           setDraft(new Set(updated.permissions));
-          toast.success(`Saved permissions for ${updated.name}.`);
+          notify.success(`Saved permissions for ${updated.name}.`);
         },
         onError: setError,
       },

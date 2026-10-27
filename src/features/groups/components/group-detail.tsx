@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { toast } from 'sonner';
+import { notify } from '@/components/ui/snackbar';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -260,7 +260,7 @@ function Heading({
             onClick={() =>
               remove.mutate(group.id, {
                 onSuccess: () => {
-                  toast.success(`${group.name} deleted.`);
+                  notify.success(`${group.name} deleted.`);
                   onDeleted();
                 },
                 onError: (err) => {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { toast } from 'sonner';
+import { notify } from '@/components/ui/snackbar';
 import { useResetPassword } from '../hooks/use-auth-mutations';
 import { NewPasswordForm } from './new-password-form';
 
@@ -24,7 +24,7 @@ export function ResetPasswordForm() {
           { token: token!, password },
           {
             onSuccess: () => {
-              toast.success('Password changed. Sign in with your new password.');
+              notify.success('Password changed. Sign in with your new password.');
               router.replace('/login');
             },
           },

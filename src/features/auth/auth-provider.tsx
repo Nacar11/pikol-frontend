@@ -2,7 +2,7 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 import { createContext, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { toast } from 'sonner';
+import { notify } from '@/components/ui/snackbar';
 import { apiClient } from '@/lib/api-client';
 import { authApi } from './api';
 import type { AuthUser, LoginInput, TokenPair } from './schemas';
@@ -63,7 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const expiryNotified = useRef(false);
 
   const signedOut = useCallback(
-    (notify: boolean) => {
+    (expired: boolean) => {
       apiClient().setAccessToken(null);
       writeStored(null);
       setUser(null);
@@ -71,9 +71,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Bookings (and their cached Maya checkout URLs) are per-user: drop
       // everything, or the next player on this tab sees the last one's.
       queryClient.clear();
-      if (notify && !expiryNotified.current) {
+      if (expired && !expiryNotified.current) {
         expiryNotified.current = true;
-        toast.warning('Your session expired. Please sign in again.');
+        notify.warning('Your session expired. Please sign in again.');
       }
     },
     [queryClient],

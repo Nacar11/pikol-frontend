@@ -115,8 +115,10 @@ Before hand-writing markup, use what exists (catalogue:
 `../docs/standard/cleanup-pass.md` §5): `PageHeader`, `SectionLabel`,
 `StatStrip`, `AddTile`, `Pill`, `Avatar`, `Skeleton`, `Select` (never a native
 `<select>`), `buttonVariants` for links styled as buttons, and `VenueRequired`
-for pages that need the active venue. Extract a new one only with two real
-callers and no per-caller flag.
+for pages that need the active venue. Feedback after an action goes through
+`notify.success / info / warning / error(message, { action? })` from
+`components/ui/snackbar` — never `sonner` directly. Extract a new one only with
+two real callers and no per-caller flag.
 
 ## Commands
 

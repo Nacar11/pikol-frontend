@@ -20,7 +20,9 @@ vi.mock('@/features/auth/api', () => ({
   },
 }));
 vi.mock('next/navigation', async () => (await import('./render')).navigationMock);
-vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn(), warning: vi.fn() } }));
+vi.mock('@/components/ui/snackbar', () => ({
+  notify: { success: vi.fn(), error: vi.fn(), warning: vi.fn() },
+}));
 
 const api = vi.mocked(authApi);
 

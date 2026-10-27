@@ -1,7 +1,7 @@
 'use client';
 
 import { useDeferredValue, useState } from 'react';
-import { toast } from 'sonner';
+import { notify } from '@/components/ui/snackbar';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -58,11 +58,11 @@ export function CustomerSearch({ group }: { group: Group }) {
                     onClick={() => {
                       const onSuccess = () => {
                         setChanged((c) => ({ ...c, [u.id]: !customer }));
-                        toast.success(
+                        notify.success(
                           `${name} ${customer ? 'can no longer book' : 'can now book'}.`,
                         );
                       };
-                      const onError = (err: unknown) => toast.error(errorMessage(err));
+                      const onError = (err: unknown) => notify.error(errorMessage(err));
                       if (customer)
                         removeMember.mutate({ id: group.id, userId: u.id }, { onSuccess, onError });
                       else

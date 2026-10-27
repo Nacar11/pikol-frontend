@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { toast } from 'sonner';
+import { notify } from '@/components/ui/snackbar';
 import { authApi } from '@/features/auth/api';
 import { VenueStaff } from '@/features/groups';
 import { staffApi } from '@/features/staff/api';
@@ -26,7 +26,7 @@ vi.mock('next/navigation', async () => ({
   ...(await import('../auth/render')).navigationMock,
   usePathname: () => '/staff/venue-staff',
 }));
-vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+vi.mock('@/components/ui/snackbar', () => ({ notify: { success: vi.fn(), error: vi.fn() } }));
 
 const MASTER_CODES = [
   'BOOKING:CancelAny',
@@ -142,7 +142,7 @@ describe('Venue staff', () => {
     expect(http.put).toHaveBeenCalledWith('/admin/user-groups/11/permissions', {
       codes: ['BOOKING:ReadAny', 'COURT:Manage'],
     });
-    await waitFor(() => expect(toast.success).toHaveBeenCalled());
+    await waitFor(() => expect(notify.success).toHaveBeenCalled());
   });
 
   it('keeps the form dirty with the message when the server refuses', async () => {

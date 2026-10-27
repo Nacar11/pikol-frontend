@@ -14,4 +14,7 @@ test('creates a group and saves a permission', async ({ ownerPage: page }) => {
   await detail.getByRole('checkbox', { name: /Manage courts/ }).check();
   await detail.getByRole('button', { name: 'Save permissions' }).click();
   await expect(detail.getByRole('definition').nth(1)).toHaveText('1 of 9');
+  await expect(
+    page.getByRole('status').filter({ hasText: `Saved permissions for ${name}.` }),
+  ).toBeVisible();
 });

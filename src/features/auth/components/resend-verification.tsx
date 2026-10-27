@@ -1,6 +1,6 @@
 'use client';
 
-import { toast } from 'sonner';
+import { notify } from '@/components/ui/snackbar';
 import { Button } from '@/components/ui/button';
 import { errorMessage } from '@/lib/api-error';
 import { useResendVerification } from '../hooks/use-auth-mutations';
@@ -22,8 +22,8 @@ export function ResendVerification({
       loading={resend.isPending}
       onClick={() =>
         resend.mutate(email, {
-          onSuccess: () => toast.success(`If ${email} needs verifying, a new link is on its way.`),
-          onError: (err) => toast.error(errorMessage(err)),
+          onSuccess: () => notify.success(`If ${email} needs verifying, a new link is on its way.`),
+          onError: (err) => notify.error(errorMessage(err)),
         })
       }
     >
