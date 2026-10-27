@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
 import { cn } from '@/lib/cn';
 import { errorCode, errorMessage } from '@/lib/api-error';
 import {
@@ -19,10 +20,11 @@ import {
 import { useCourts } from '@/features/catalog';
 import { useCloseCourts } from '../hooks/use-setup';
 
-const HOURS = Array.from({ length: 24 }, (_, h) => h);
+const HOUR_OPTIONS = Array.from({ length: 24 }, (_, h) => ({
+  value: String(h),
+  label: formatHourOfDay(h),
+}));
 const HOUR_MS = 3_600_000;
-
-const SELECT_CLASS = 'h-10 w-full rounded border border-input bg-surface px-3 text-sm';
 
 /** One click fills the reason; the field stays free text. */
 const REASONS = ['Maintenance', 'Private event', 'Tournament', 'Weather'];
@@ -338,17 +340,11 @@ function HourSelect({
   onChange: (hour: number) => void;
 }) {
   return (
-    <select
+    <Select
       aria-label={label}
-      className={SELECT_CLASS}
-      value={value}
-      onChange={(e) => onChange(Number(e.target.value))}
-    >
-      {HOURS.map((h) => (
-        <option key={h} value={h}>
-          {formatHourOfDay(h)}
-        </option>
-      ))}
-    </select>
+      value={String(value)}
+      onChange={(v) => onChange(Number(v))}
+      options={HOUR_OPTIONS}
+    />
   );
 }

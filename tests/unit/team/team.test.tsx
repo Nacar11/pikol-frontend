@@ -7,6 +7,7 @@ import { staffApi } from '@/features/staff/api';
 import { TeamList } from '@/features/team';
 import { ApiError } from '@/lib/api-client';
 import { renderWithAuth } from '../auth/render';
+import { choose } from '../select';
 
 // The network edge: the real teamApi runs against this fake HTTP client.
 const http = vi.hoisted(() => ({
@@ -155,11 +156,12 @@ describe('TeamList', () => {
     setup(MANAGER);
     await fillInvite(u);
     const group = screen.getByLabelText('Group at Riverside');
-    // A manager is never offered the master group.
-    await waitFor(() => expect(within(group).getAllByRole('option')).toHaveLength(2));
-    expect(within(group).queryByRole('option', { name: 'Venue master' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Send invitation' })).toBeDisabled();
-    await u.selectOptions(group, 'Front desk');
+    await u.click(group);
+    // A manager is never offered the master group.
+    await waitFor(() => expect(screen.getAllByRole('option')).toHaveLength(1));
+    expect(screen.queryByRole('option', { name: 'Venue master' })).not.toBeInTheDocument();
+    await u.click(screen.getByRole('option', { name: 'Front desk' }));
     await u.click(screen.getByRole('button', { name: 'Send invitation' }));
     await waitFor(() => expect(http.post).toHaveBeenCalledTimes(1));
     const [path, body] = http.post.mock.calls[0] as [string, Record<string, unknown>];
@@ -174,7 +176,7 @@ describe('TeamList', () => {
     http.post.mockResolvedValue(person(9));
     setup(MANAGER);
     await fillInvite(u, '09171234567');
-    await u.selectOptions(screen.getByLabelText('Group at Riverside'), 'Front desk');
+    await choose(u, screen.getByLabelText('Group at Riverside'), 'Front desk');
     await u.click(screen.getByRole('button', { name: 'Send invitation' }));
     await waitFor(() => expect(http.post).toHaveBeenCalled());
     const body = http.post.mock.calls[0]![1] as Record<string, unknown>;
@@ -192,7 +194,7 @@ describe('TeamList', () => {
     http.post.mockResolvedValue(person(9, { groups: [MASTERS] }));
     setup(OWNER);
     await fillInvite(u);
-    await u.selectOptions(screen.getByLabelText('Group at Riverside'), 'Venue master');
+    await choose(u, screen.getByLabelText('Group at Riverside'), 'Venue master');
     await u.click(screen.getByRole('button', { name: 'Send invitation' }));
     await waitFor(() => expect(http.post).toHaveBeenCalledTimes(1));
     const [path, body] = http.post.mock.calls[0] as [string, Record<string, unknown>];
@@ -210,7 +212,7 @@ describe('TeamList', () => {
     );
     setup(MANAGER);
     await fillInvite(u);
-    await u.selectOptions(screen.getByLabelText('Group at Riverside'), 'Front desk');
+    await choose(u, screen.getByLabelText('Group at Riverside'), 'Front desk');
     await u.click(screen.getByRole('button', { name: 'Send invitation' }));
 
     expect(await screen.findByRole('link', { name: 'add them from Venue staff' })).toHaveAttribute(

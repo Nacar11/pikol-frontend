@@ -45,7 +45,7 @@ describe('useStaffVenue', () => {
     setSearch('venue=5&date=2026-10-23');
     renderWithAuth(<Probe />, { status: 'authenticated', user });
 
-    expect(await screen.findByRole('combobox')).toHaveValue('5');
+    expect(await screen.findByRole('combobox')).toHaveAttribute('data-value', '5');
     expect(screen.getByTestId('id')).toHaveTextContent('5');
     expect(screen.getByTestId('pick')).toHaveTextContent('true');
   });
@@ -54,14 +54,14 @@ describe('useStaffVenue', () => {
     setSearch('venue=99');
     renderWithAuth(<Probe />, { status: 'authenticated', user });
 
-    expect(await screen.findByRole('combobox')).toHaveValue('2');
+    expect(await screen.findByRole('combobox')).toHaveAttribute('data-value', '2');
   });
 
   it('falls back to the venue remembered on this browser, then the first', async () => {
     window.localStorage.setItem(VENUE_STORAGE_KEY, '5');
     renderWithAuth(<Probe />, { status: 'authenticated', user });
 
-    expect(await screen.findByRole('combobox')).toHaveValue('5');
+    expect(await screen.findByRole('combobox')).toHaveAttribute('data-value', '5');
   });
 
   it('hides the picker when the caller works at one venue', async () => {
@@ -78,7 +78,9 @@ describe('useStaffVenue', () => {
     renderWithAuth(<Probe />, { status: 'authenticated', user });
     const select = await screen.findByRole('combobox');
     const { default: userEvent } = await import('@testing-library/user-event');
-    await userEvent.selectOptions(select, '2');
+    const u = userEvent.setup();
+    await u.click(select);
+    await u.click(await screen.findByRole('option', { name: 'Venue 2' }));
 
     expect(router.replace).toHaveBeenCalledWith('/staff/schedule?venue=2&date=2026-10-23');
     expect(window.localStorage.getItem(VENUE_STORAGE_KEY)).toBe('2');

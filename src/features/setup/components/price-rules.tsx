@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { PageLoading } from '@/components/ui/page-loading';
+import { Select } from '@/components/ui/select';
 import { StaffGate } from '@/features/staff';
 import { errorMessage } from '@/lib/api-error';
 import { formatHourOfDay } from '@/lib/manila';
@@ -21,9 +22,16 @@ import {
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const HOURS = Array.from({ length: 24 }, (_, h) => h);
+// "Any" is the empty value: the rule omits the key.
+const DAY_OPTIONS = [
+  { value: '', label: 'Any day' },
+  ...DAYS.map((d, i) => ({ value: String(i), label: d })),
+];
+const HOUR_OPTIONS = [
+  { value: '', label: 'Any hour' },
+  ...HOURS.map((h) => ({ value: String(h), label: formatHourOfDay(h) })),
+];
 const BAD_AMOUNT = 'Enter an amount like 600 or 600.50.';
-const SELECT =
-  'h-10 w-full rounded border border-border bg-surface px-2 text-sm focus-visible:outline-2 focus-visible:outline-ring';
 
 export function PriceRules({ courtId }: { courtId: number }) {
   return (
@@ -82,35 +90,11 @@ function Rules({ courtId }: { courtId: number }) {
       <form onSubmit={add} className="grid gap-3 rounded border border-border bg-surface p-3">
         <div className="space-y-1">
           <Label htmlFor="rule-day">Day</Label>
-          <select
-            id="rule-day"
-            className={SELECT}
-            value={day}
-            onChange={(e) => setDay(e.target.value)}
-          >
-            <option value="">Any day</option>
-            {DAYS.map((d, i) => (
-              <option key={d} value={i}>
-                {d}
-              </option>
-            ))}
-          </select>
+          <Select id="rule-day" value={day} onChange={setDay} options={DAY_OPTIONS} />
         </div>
         <div className="space-y-1">
           <Label htmlFor="rule-hour">Hour</Label>
-          <select
-            id="rule-hour"
-            className={SELECT}
-            value={hour}
-            onChange={(e) => setHour(e.target.value)}
-          >
-            <option value="">Any hour</option>
-            {HOURS.map((h) => (
-              <option key={h} value={h}>
-                {formatHourOfDay(h)}
-              </option>
-            ))}
-          </select>
+          <Select id="rule-hour" value={hour} onChange={setHour} options={HOUR_OPTIONS} />
         </div>
         <div className="space-y-1">
           <Label htmlFor="rule-price">Price (pesos)</Label>

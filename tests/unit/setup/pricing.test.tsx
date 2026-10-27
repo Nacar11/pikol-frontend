@@ -7,6 +7,7 @@ import { setupApi } from '@/features/setup/api';
 import { ApiError } from '@/lib/api-client';
 import { manilaToday } from '@/lib/manila';
 import { renderWithAuth } from '../auth/render';
+import { choose } from '../select';
 
 vi.mock('@/features/setup/api', () => ({
   setupApi: {
@@ -82,7 +83,7 @@ describe('PriceRules', () => {
     });
     setup(<PriceRules courtId={4} />);
     await screen.findByText('₱400');
-    await u.selectOptions(screen.getByLabelText('Hour'), '18');
+    await choose(u, screen.getByLabelText('Hour'), '6 PM');
     await u.type(screen.getByLabelText('Price (pesos)'), '600');
     await u.click(screen.getByRole('button', { name: 'Add rule' }));
     await waitFor(() => expect(api.createPriceRule).toHaveBeenCalledTimes(1));
@@ -98,7 +99,7 @@ describe('PriceRules', () => {
     api.priceRules.mockResolvedValue([] as never);
     api.createPriceRule.mockResolvedValue(rule(9) as never);
     setup(<PriceRules courtId={4} />);
-    await u.selectOptions(await screen.findByLabelText('Day'), '6');
+    await choose(u, await screen.findByLabelText('Day'), 'Saturday');
     await u.type(screen.getByLabelText('Price (pesos)'), '500');
     await u.click(screen.getByRole('button', { name: 'Add rule' }));
     await waitFor(() =>

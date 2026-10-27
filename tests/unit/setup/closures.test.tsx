@@ -9,6 +9,7 @@ import { ClosureAdmin } from '@/features/setup';
 import { setupApi } from '@/features/setup/api';
 import { ApiError } from '@/lib/api-client';
 import { renderWithAuth, setSearch } from '../auth/render';
+import { choose } from '../select';
 
 vi.mock('@/features/setup/api', () => ({
   setupApi: { courts: vi.fn(), closeCourts: vi.fn() },
@@ -84,11 +85,17 @@ beforeEach(() => {
 });
 afterEach(() => vi.useRealTimers());
 
+const hourLabel = (h: string) => {
+  const n = Number(h);
+  return `${n % 12 === 0 ? 12 : n % 12} ${n < 12 ? 'AM' : 'PM'}`;
+};
+
 async function fill(day: string, startHour: string, endDay: string, endHour: string) {
+  const u = userEvent.setup();
   fireEvent.change(await screen.findByLabelText('Start day'), { target: { value: day } });
-  await userEvent.selectOptions(screen.getByLabelText('Start hour'), startHour);
+  await choose(u, screen.getByLabelText('Start hour'), hourLabel(startHour));
   fireEvent.change(screen.getByLabelText('End day'), { target: { value: endDay } });
-  await userEvent.selectOptions(screen.getByLabelText('End hour'), endHour);
+  await choose(u, screen.getByLabelText('End hour'), hourLabel(endHour));
 }
 
 describe('ClosureForm', () => {
@@ -140,27 +147,27 @@ describe('ClosureForm', () => {
     vi.useFakeTimers({ toFake: ['Date'], now: NOW });
     renderPage();
     expect(await screen.findByLabelText('Start day')).toHaveValue('2026-10-23');
-    expect(screen.getByLabelText('Start hour')).toHaveValue('13');
+    expect(screen.getByLabelText('Start hour')).toHaveAttribute('data-value', '13');
     expect(screen.getByLabelText('End day')).toHaveValue('2026-10-23');
-    expect(screen.getByLabelText('End hour')).toHaveValue('14');
+    expect(screen.getByLabelText('End hour')).toHaveAttribute('data-value', '14');
   });
 
   it('rolls the default over midnight (23:30 Manila starts at 12 AM tomorrow)', async () => {
     vi.useFakeTimers({ toFake: ['Date'], now: new Date('2026-10-23T15:30:00Z') });
     renderPage();
     expect(await screen.findByLabelText('Start day')).toHaveValue('2026-10-24');
-    expect(screen.getByLabelText('Start hour')).toHaveValue('0');
+    expect(screen.getByLabelText('Start hour')).toHaveAttribute('data-value', '0');
     expect(screen.getByLabelText('End day')).toHaveValue('2026-10-24');
-    expect(screen.getByLabelText('End hour')).toHaveValue('1');
+    expect(screen.getByLabelText('End hour')).toHaveAttribute('data-value', '1');
   });
 
   it('rolls the end over midnight (10:30 PM starts at 11 PM, ends 12 AM tomorrow)', async () => {
     vi.useFakeTimers({ toFake: ['Date'], now: new Date('2026-10-23T14:30:00Z') });
     renderPage();
     expect(await screen.findByLabelText('Start day')).toHaveValue('2026-10-23');
-    expect(screen.getByLabelText('Start hour')).toHaveValue('23');
+    expect(screen.getByLabelText('Start hour')).toHaveAttribute('data-value', '23');
     expect(screen.getByLabelText('End day')).toHaveValue('2026-10-24');
-    expect(screen.getByLabelText('End hour')).toHaveValue('0');
+    expect(screen.getByLabelText('End hour')).toHaveAttribute('data-value', '0');
   });
 
   it('a preset fills the range and the summary counts its hours', async () => {
@@ -169,9 +176,9 @@ describe('ClosureForm', () => {
     renderPage();
     await u.click(await screen.findByRole('button', { name: 'All day tomorrow' }));
     expect(screen.getByLabelText('Start day')).toHaveValue('2026-10-24');
-    expect(screen.getByLabelText('Start hour')).toHaveValue('0');
+    expect(screen.getByLabelText('Start hour')).toHaveAttribute('data-value', '0');
     expect(screen.getByLabelText('End day')).toHaveValue('2026-10-25');
-    expect(screen.getByLabelText('End hour')).toHaveValue('0');
+    expect(screen.getByLabelText('End hour')).toHaveAttribute('data-value', '0');
     expect(screen.getByText('24 h')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'All day tomorrow' })).toHaveAttribute(
       'aria-pressed',

@@ -6,6 +6,15 @@ const config: Config = {
   content: ['./src/**/*.{ts,tsx}'],
   theme: {
     extend: {
+      keyframes: {
+        'select-in': {
+          from: { opacity: '0', transform: 'translateY(-2px) scale(0.98)' },
+          to: { opacity: '1', transform: 'none' },
+        },
+      },
+      animation: {
+        'select-in': 'select-in 120ms ease-out',
+      },
       fontFamily: {
         sans: ['var(--font-sans)', 'system-ui', 'sans-serif'],
       },

@@ -7,13 +7,12 @@ import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select } from '@/components/ui/select';
 import { usePermissions } from '@/features/auth';
 import { useGroups } from '@/features/groups';
 import { useStaffVenue } from '@/features/staff';
 import { errorCode, errorMessage } from '@/lib/api-error';
 import { useInvite } from '../hooks/use-team';
-
-const SELECT_CLASS = 'h-10 w-full rounded border border-input bg-surface px-3 text-sm';
 
 type Fields = { email: string; first_name: string; last_name: string; mobile: string };
 const EMPTY: Fields = { email: '', first_name: '', last_name: '', mobile: '' };
@@ -111,19 +110,13 @@ export function InviteForm({
       </div>
       <div className="space-y-1">
         <Label htmlFor="invite-group">Group{venue ? ` at ${venue.name}` : ''}</Label>
-        <select
+        <Select
           id="invite-group"
-          className={SELECT_CLASS}
           value={groupId}
-          onChange={(e) => setGroupId(e.target.value)}
-        >
-          <option value="">Choose a group</option>
-          {choices.map((g) => (
-            <option key={g.id} value={g.id}>
-              {g.name}
-            </option>
-          ))}
-        </select>
+          onChange={setGroupId}
+          placeholder="Choose a group"
+          options={choices.map((g) => ({ value: String(g.id), label: g.name }))}
+        />
       </div>
       {invite.isError && !exists && (
         <Alert tone="error" className="sm:col-span-2">
