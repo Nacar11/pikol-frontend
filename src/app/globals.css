@@ -37,3 +37,15 @@
     @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
   }
 }
+
+@layer utilities {
+  /* A closed court-hour. The one sanctioned pattern in the console: it is a
+   * status (spec: never colour alone), not decoration. Built from tokens. */
+  .bg-hatch {
+    background-image: repeating-linear-gradient(
+      45deg,
+      hsl(var(--muted)) 0 6px,
+      hsl(var(--border)) 6px 12px
+    );
+  }
+}

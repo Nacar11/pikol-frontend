@@ -26,7 +26,10 @@ export function DayBookings({ venueId, date }: { venueId: number; date: string }
     return <p className="text-sm text-muted-foreground">No bookings on this day.</p>;
   }
   return (
-    <ul className="divide-y divide-border rounded border border-border bg-surface">
+    <ul
+      aria-label="Bookings this day"
+      className="divide-y divide-border rounded border border-border bg-surface"
+    >
       {data.data.map((b) => (
         <li key={b.id}>
           <Link

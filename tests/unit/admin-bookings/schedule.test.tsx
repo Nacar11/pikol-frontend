@@ -1,5 +1,5 @@
 import { QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { toast } from 'sonner';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -142,9 +142,8 @@ describe('Schedule walk-ins', () => {
 
   it('has no buttons in the grid without BOOKING:CreateWalkIn', async () => {
     setup(['BOOKING:ReadAny']);
-    await screen.findByLabelText('Court 2, 7 PM, available, ₱600');
+    await screen.findByRole('img', { name: 'Court 2, 7 PM, open' });
     expect(screen.queryByRole('button', { name: /Court 2/ })).not.toBeInTheDocument();
-    // The started hour looks exactly as it does for a player.
     expect(screen.getByRole('img', { name: 'Court 2, 6 PM, past' })).toBeInTheDocument();
     expect(screen.queryByLabelText(/6 PM, available/)).not.toBeInTheDocument();
   });
@@ -197,15 +196,24 @@ describe('Schedule day list', () => {
       ]) as never,
     );
     setup(['BOOKING:ReadAny']);
-    expect(await screen.findByText('Ana Cruz')).toBeInTheDocument();
-    expect(screen.getByText('Walk-in')).toBeInTheDocument();
-    expect(screen.getByText('Closure')).toBeInTheDocument();
-    expect(screen.getByText('In progress')).toBeInTheDocument();
-    const hrefs = screen
-      .getAllByRole('link')
-      .map((a) => a.getAttribute('href'))
-      .filter((h) => h?.startsWith('/staff/bookings/'));
-    expect(hrefs).toEqual(['/staff/bookings/1', '/staff/bookings/2', '/staff/bookings/3']);
+    // The list below the grid names them in server order…
+    const list = await screen.findByRole('list', { name: 'Bookings this day' });
+    expect(within(list).getByText('Ana Cruz')).toBeInTheDocument();
+    expect(within(list).getByText('Walk-in')).toBeInTheDocument();
+    expect(within(list).getByText('Closure')).toBeInTheDocument();
+    expect(
+      within(list)
+        .getAllByRole('link')
+        .map((a) => a.getAttribute('href')),
+    ).toEqual(['/staff/bookings/1', '/staff/bookings/2', '/staff/bookings/3']);
+    // …and the grid draws each as a block, its state from the clock and the
+    // payment axis (the grid's own rule, tested in schedule-model).
+    expect(
+      screen.getByRole('link', { name: /Court 2, 6 PM – 7 PM, Walk-in, awaiting payment/ }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: /Court 2, 6 PM – 7 PM, Closure, closed/ }),
+    ).toBeInTheDocument();
   });
 
   it('shows the empty state', async () => {

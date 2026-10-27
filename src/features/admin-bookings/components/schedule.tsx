@@ -7,7 +7,6 @@ import { Alert } from '@/components/ui/alert';
 import { PageLoading } from '@/components/ui/page-loading';
 import { usePermissions } from '@/features/auth';
 import {
-  AvailabilityGrid,
   availabilityKeys,
   reconcile,
   subtotalCentavos,
@@ -19,12 +18,15 @@ import {
 import { useStaffVenue } from '@/features/staff';
 import { errorCode, errorMessage } from '@/lib/api-error';
 import { addDays, manilaHourNow, manilaToday } from '@/lib/manila';
-import { REFETCH_MS } from '../hooks/use-day-bookings';
 import { useWalkIn } from '../hooks/use-admin-booking-mutations';
 import { adminBookingKeys } from '../keys';
-import { nextOpen, staffSelectable } from '../schedule-model';
+import { REFETCH_MS, useDayBookings } from '../hooks/use-day-bookings';
+import { useNow } from '../hooks/use-now';
+import { blocksFor, courtHours, nextOpen, staffSelectable } from '../schedule-model';
 import { DayBookings } from './day-bookings';
 import { ScheduleHeader } from './schedule-header';
+import { ScheduleLegend } from './schedule-legend';
+import { StaffCourtGrid } from './staff-court-grid';
 import { WalkInBar } from './walk-in-bar';
 import { WeekStrip } from './week-strip';
 
@@ -104,6 +106,8 @@ function VenueDay({
   const { data, error, isPending, dataUpdatedAt } = useAvailability(venueId, date, {
     refetchInterval: REFETCH_MS,
   });
+  const bookings = useDayBookings(venueId, date);
+  const now = useNow();
   const walkIn = useWalkIn(venueId, date);
   const [selection, setSelection] = useState<Selection | null>(null);
   const [notes, setNotes] = useState('');
@@ -146,6 +150,14 @@ function VenueDay({
 
   const court = selection && data?.courts.find((c) => c.court_id === selection.court_id);
   const first = selection && court?.slots[selection.start];
+  const blocks = data ? blocksFor(data, bookings.data?.data ?? [], now) : [];
+  const totals = (data?.courts ?? []).reduce(
+    (sum, c) => {
+      const { booked, closed } = courtHours(blocks, c.court_id);
+      return { booked: sum.booked + booked, bookable: sum.bookable + 24 - closed };
+    },
+    { booked: 0, bookable: 0 },
+  );
 
   return (
     <div className="space-y-4">
@@ -154,17 +166,21 @@ function VenueDay({
       ) : isPending ? (
         <PageLoading label="Loading availability" />
       ) : (
-        <AvailabilityGrid
-          data={data}
-          selection={selection}
-          selectable={staffSelectable}
-          onCellTap={
-            canWalkIn
-              ? (courtId, index) =>
-                  setSelection((sel) => tapCell(sel, data, courtId, index, staffSelectable))
-              : undefined
-          }
-        />
+        <>
+          <ScheduleLegend booked={totals.booked} bookable={totals.bookable} />
+          <StaffCourtGrid
+            data={data}
+            blocks={blocks}
+            selection={selection}
+            scrollToHour={date === manilaToday() ? manilaHourNow() : null}
+            onCellTap={
+              canWalkIn
+                ? (courtId, index) =>
+                    setSelection((sel) => tapCell(sel, data, courtId, index, staffSelectable))
+                : undefined
+            }
+          />
+        </>
       )}
       {canWalkIn && data && selection && court && first && (
         <WalkInBar
