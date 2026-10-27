@@ -33,6 +33,9 @@ assertDeployEnv();
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // A build into .next under a running `next dev` breaks the dev server;
+  // the e2e build writes to its own directory.
+  distDir: process.env.NEXT_DIST_DIR ?? '.next',
   // /staff has no page of its own. Redirected here, as HTTP, before React
   // renders: a page calling redirect() during a client navigation under the
   // staff layout crashed the App Router ("Rendered more hooks…").
