@@ -21,7 +21,12 @@ function grid(statuses: Record<number, GridSlot['status']> = {}): Availability {
       price_centavos: 50000 + i * 100,
     })),
   });
-  return { venue_id: 1, date: '2026-10-23', courts: [court(1), court(2)] };
+  return {
+    venue_id: 1,
+    date: '2026-10-23',
+    convenience_fee_percent: '3.00',
+    courts: [court(1), court(2)],
+  };
 }
 
 describe('tapCell', () => {

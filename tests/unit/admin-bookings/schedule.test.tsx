@@ -35,6 +35,7 @@ function grid(date = '2026-10-23'): Availability {
   return {
     venue_id: 1,
     date,
+    convenience_fee_percent: '3.00',
     courts: [
       {
         court_id: 7,

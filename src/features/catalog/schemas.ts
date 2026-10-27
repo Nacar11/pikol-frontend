@@ -8,6 +8,7 @@ export const VenueSchema = z.object({
   is_active: z.boolean(),
 });
 export type Venue = z.infer<typeof VenueSchema>;
+export const VenuePageSchema = pageSchema(VenueSchema);
 
 export const CourtSchema = z.object({
   id: z.number(),

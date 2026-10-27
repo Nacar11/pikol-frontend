@@ -18,6 +18,7 @@ const at = (hour: number) => new Date(DAY + hour * 3_600_000).toISOString();
 const grid: Availability = {
   venue_id: 1,
   date: '2030-01-07',
+  convenience_fee_percent: '3.00',
   courts: [1, 2].map((court_id) => ({
     court_id,
     name: `Court ${court_id}`,

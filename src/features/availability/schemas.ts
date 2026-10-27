@@ -21,6 +21,8 @@ export type GridCourt = z.infer<typeof GridCourtSchema>;
 export const AvailabilitySchema = z.object({
   venue_id: z.number(),
   date: z.string(),
+  /** A decimal string, e.g. "3.00" — the fee shown before Pay now. */
+  convenience_fee_percent: z.string(),
   courts: z.array(GridCourtSchema),
 });
 export type Availability = z.infer<typeof AvailabilitySchema>;

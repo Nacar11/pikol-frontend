@@ -12,6 +12,7 @@ const at = (hour: number) => new Date(DAY + hour * 3_600_000).toISOString();
 const data: Availability = {
   venue_id: 1,
   date: '2026-10-23',
+  convenience_fee_percent: '3.00',
   courts: [
     {
       court_id: 7,

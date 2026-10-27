@@ -147,3 +147,8 @@ tokens rotate, and a shared one trips replay detection. Seeded logins:
 
 Plans and ADRs are committed only in `../docs/`. Do not create a `docs/`
 directory here. `tasks/` is a gitignored workspace.
+
+## Building unfamiliar features
+
+For unfamiliar features, don't write from scratch — first search GitHub for
+open-source projects, compare approaches, then get started.

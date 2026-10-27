@@ -20,6 +20,7 @@ function grid(
   return {
     venue_id: 1,
     date: '2026-10-23',
+    convenience_fee_percent: '3.00',
     courts: [7, 8].map((court_id) => ({
       court_id,
       name: `Court ${court_id}`,
