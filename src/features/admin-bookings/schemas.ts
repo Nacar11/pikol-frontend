@@ -18,6 +18,14 @@ export type AdminBooking = z.infer<typeof AdminBookingSchema>;
 export const AdminBookingPageSchema = pageSchema(AdminBookingSchema);
 export type AdminBookingPage = Page<AdminBooking>;
 
+/** GET /admin/bookings/occupancy — one Manila day of the two-week strip. */
+export const DayOccupancySchema = z.object({
+  date: z.string(),
+  booked_hours: z.number(),
+  bookable_hours: z.number(),
+});
+export type DayOccupancy = z.infer<typeof DayOccupancySchema>;
+
 export type WalkInRequest = { court_id: number; starts_at: string; hours: number; notes?: string };
 
 /** Online money arrives only through the provider, so `ONLINE` is not offered. */

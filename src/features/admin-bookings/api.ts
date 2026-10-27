@@ -1,7 +1,10 @@
+import { z } from 'zod';
 import { ApiClient, apiClient } from '@/lib/api-client';
 import {
   AdminBookingPageSchema,
   AdminBookingSchema,
+  DayOccupancySchema,
+  type DayOccupancy,
   type AdminBooking,
   type AdminBookingPage,
   type ListParams,
@@ -20,6 +23,18 @@ export const adminBookingsApi = {
         params: { venue_id: venueId, date, limit: DAY_LIMIT },
       })
       .then((r) => AdminBookingPageSchema.parse(r));
+  },
+
+  /** Booked vs bookable court-hours per Manila day, `days` from `from`. */
+  occupancy(
+    venueId: number,
+    from: string,
+    days: number,
+    client: ApiClient = apiClient(),
+  ): Promise<DayOccupancy[]> {
+    return client
+      .get<unknown>('/admin/bookings/occupancy', { params: { venue_id: venueId, from, days } })
+      .then((r) => z.array(DayOccupancySchema).parse(r));
   },
 
   list(params: ListParams, client: ApiClient = apiClient()): Promise<AdminBookingPage> {

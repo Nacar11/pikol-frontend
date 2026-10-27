@@ -5,12 +5,16 @@ import {
   formatDayChip,
   formatDayLong,
   formatHour,
+  formatDayParts,
   formatHourOfDay,
   formatTimeRange,
+  formatWeekRange,
   isManilaDay,
+  isoWeek,
   manilaDayOf,
   manilaInstant,
   manilaToday,
+  mondayOf,
 } from '@/lib/manila';
 
 describe('manila', () => {
@@ -80,5 +84,37 @@ describe('formatHourOfDay', () => {
 
   it('throws outside 0-23', () => {
     expect(() => formatHourOfDay(24)).toThrow();
+  });
+});
+
+describe('weeks', () => {
+  it('mondayOf starts weeks on Monday, Sunday included in the week before', () => {
+    expect(mondayOf('2026-09-07')).toBe('2026-09-07');
+    expect(mondayOf('2026-09-13')).toBe('2026-09-07'); // a Sunday
+    expect(mondayOf('2026-10-01')).toBe('2026-09-28'); // across a month
+  });
+
+  it('a late-Sunday Manila instant is still that Sunday’s week', () => {
+    // 11:30 PM Sunday in Manila is 3:30 PM Sunday UTC — and still Sunday in
+    // any UTC− zone a browser might be in. Days are strings, so none applies.
+    const sunday = manilaDayOf('2026-09-13T15:30:00Z');
+    expect(sunday).toBe('2026-09-13');
+    expect(mondayOf(sunday)).toBe('2026-09-07');
+  });
+
+  it('isoWeek follows ISO-8601, including the week-year at New Year', () => {
+    expect(isoWeek('2026-09-07')).toEqual({ year: 2026, week: 37 });
+    expect(isoWeek('2027-01-01')).toEqual({ year: 2026, week: 53 });
+    expect(isoWeek('2027-01-04')).toEqual({ year: 2027, week: 1 });
+  });
+
+  it('formats the heading parts and the week range', () => {
+    expect(formatDayParts('2026-09-07')).toEqual({
+      title: 'Monday, 7 September',
+      weekday: 'MON',
+      day: '7',
+    });
+    expect(formatWeekRange('2026-09-07')).toBe('7–13 Sep');
+    expect(formatWeekRange('2026-09-28')).toBe('28 Sep – 4 Oct');
   });
 });

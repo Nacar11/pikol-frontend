@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Alert } from '@/components/ui/alert';
@@ -9,7 +9,6 @@ import { usePermissions } from '@/features/auth';
 import {
   AvailabilityGrid,
   availabilityKeys,
-  DateStrip,
   reconcile,
   subtotalCentavos,
   tapCell,
@@ -19,18 +18,33 @@ import {
 } from '@/features/availability';
 import { useStaffVenue } from '@/features/staff';
 import { errorCode, errorMessage } from '@/lib/api-error';
-import { formatDayLong } from '@/lib/manila';
+import { addDays, manilaHourNow, manilaToday } from '@/lib/manila';
 import { REFETCH_MS } from '../hooks/use-day-bookings';
 import { useWalkIn } from '../hooks/use-admin-booking-mutations';
 import { adminBookingKeys } from '../keys';
+import { nextOpen, staffSelectable } from '../schedule-model';
 import { DayBookings } from './day-bookings';
+import { ScheduleHeader } from './schedule-header';
 import { WalkInBar } from './walk-in-bar';
+import { WeekStrip } from './week-strip';
 
-/** Staff may also pick `PAST`: free but too soon for a player, which is the
- * walk-in-now case. */
-const staffSelectable = (s: string): boolean => s === 'AVAILABLE' || s === 'PAST';
+/** Arrow keys change the day, except while typing. */
+function useDayKeys(date: string, onDateChange: (day: string) => void) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target?.closest('input, textarea, select, [contenteditable="true"]')) return;
+      if (e.altKey || e.ctrlKey || e.metaKey) return;
+      if (e.key === 'ArrowLeft') onDateChange(addDays(date, -1));
+      if (e.key === 'ArrowRight') onDateChange(addDays(date, 1));
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [date, onDateChange]);
+}
 
-/** The staff home screen: the grid, the walk-in bar and the day's bookings. */
+/** The staff home screen: the day header, the two-week strip, the grid and
+ * the day's bookings. */
 export function Schedule({
   date,
   onDateChange,
@@ -38,19 +52,32 @@ export function Schedule({
   date: string;
   onDateChange: (day: string) => void;
 }) {
-  const { venueId, isPending, error, venues } = useStaffVenue();
+  const { venueId, venue, isPending, error, venues } = useStaffVenue();
+  const { data: permissions } = usePermissions();
+  const canWalkIn = permissions?.includes('BOOKING:CreateWalkIn') ?? false;
+  // Bumped by "New booking"; the day below answers by selecting the next
+  // open hour.
+  const [newBooking, setNewBooking] = useState(0);
+  useDayKeys(date, onDateChange);
   return (
     <section className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Schedule</h1>
-          <p className="text-sm text-muted-foreground">{formatDayLong(date)}</p>
-        </div>
-      </div>
-      <DateStrip value={date} onChange={onDateChange} start={-7} days={21} />
+      <ScheduleHeader
+        venueName={venue?.name ?? null}
+        date={date}
+        onDateChange={onDateChange}
+        onNewBooking={canWalkIn && venueId !== null ? () => setNewBooking((n) => n + 1) : undefined}
+      />
       {venueId !== null ? (
-        // Keyed so a new venue or day starts with no selection and no stale notes.
-        <VenueDay key={`${venueId}-${date}`} venueId={venueId} date={date} />
+        <>
+          <WeekStrip venueId={venueId} value={date} onChange={onDateChange} />
+          {/* Keyed so a new venue or day starts with no selection and no stale notes. */}
+          <VenueDay
+            key={`${venueId}-${date}`}
+            venueId={venueId}
+            date={date}
+            newBooking={newBooking}
+          />
+        </>
       ) : error ? (
         <Alert tone="error">{errorMessage(error)}</Alert>
       ) : isPending ? (
@@ -62,7 +89,15 @@ export function Schedule({
   );
 }
 
-function VenueDay({ venueId, date }: { venueId: number; date: string }) {
+function VenueDay({
+  venueId,
+  date,
+  newBooking,
+}: {
+  venueId: number;
+  date: string;
+  newBooking: number;
+}) {
   const qc = useQueryClient();
   const { data: permissions } = usePermissions();
   const canWalkIn = permissions?.includes('BOOKING:CreateWalkIn') ?? false;
@@ -77,6 +112,16 @@ function VenueDay({ venueId, date }: { venueId: number; date: string }) {
   useEffect(() => {
     if (data) setSelection((sel) => reconcile(sel, data, staffSelectable));
   }, [data, dataUpdatedAt]);
+
+  // "New booking": the next open hour on the first court, raising the bar.
+  const handled = useRef(newBooking);
+  useEffect(() => {
+    if (newBooking === handled.current || !data) return;
+    handled.current = newBooking;
+    const next = nextOpen(data, date === manilaToday() ? manilaHourNow() : 0);
+    if (next) setSelection(next);
+    else toast.info('No open hours left on this day.');
+  }, [newBooking, data, date]);
 
   function submit() {
     if (!selection || !data) return;

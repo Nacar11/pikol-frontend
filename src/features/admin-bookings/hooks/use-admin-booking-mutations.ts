@@ -15,6 +15,7 @@ export function useWalkIn(venueId: number, date: string) {
       qc.setQueryData(adminBookingKeys.detail(booking.id), booking);
       void qc.invalidateQueries({ queryKey: availabilityKeys.day(venueId, date) });
       void qc.invalidateQueries({ queryKey: adminBookingKeys.day(venueId, date) });
+      void qc.invalidateQueries({ queryKey: adminBookingKeys.occupancyAll() });
     },
   });
 }

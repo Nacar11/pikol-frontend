@@ -16,7 +16,7 @@ import { createQueryClient } from '@/lib/query-client';
 
 vi.mock('@/features/availability/api', () => ({ availabilityApi: { day: vi.fn() } }));
 vi.mock('@/features/admin-bookings/api', () => ({
-  adminBookingsApi: { day: vi.fn(), walkIn: vi.fn() },
+  adminBookingsApi: { day: vi.fn(), walkIn: vi.fn(), occupancy: vi.fn() },
 }));
 vi.mock('@/features/auth/api', () => ({ authApi: { permissions: vi.fn() } }));
 vi.mock('@/features/staff/api', () => ({ staffApi: { myVenues: vi.fn() } }));
@@ -24,7 +24,7 @@ vi.mock('next/navigation', async () => ({
   ...(await import('../auth/render')).navigationMock,
   usePathname: () => '/staff/schedule',
 }));
-vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() } }));
 
 const MIDNIGHT = Date.UTC(2026, 9, 22, 16, 0, 0);
 const user = { id: 1, venue_id: 1, role: 'VENUE_STAFF' } as never;
@@ -88,13 +88,15 @@ function apiError(status: number, code: string, detail: string) {
   return new ApiError(status, { detail, code, request_id: 'r' });
 }
 
+const onDateChange = vi.fn();
+
 function tree(qc: ReturnType<typeof createQueryClient>, date: string) {
   return (
     <QueryClientProvider client={qc}>
       <AuthContext.Provider
         value={{ status: 'authenticated', user, login: vi.fn(), logout: vi.fn() }}
       >
-        <Schedule date={date} onDateChange={vi.fn()} />
+        <Schedule date={date} onDateChange={onDateChange} />
       </AuthContext.Provider>
     </QueryClientProvider>
   );
@@ -113,6 +115,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(availabilityApi.day).mockResolvedValue(grid());
   vi.mocked(adminBookingsApi.day).mockResolvedValue(page([]) as never);
+  vi.mocked(adminBookingsApi.occupancy).mockResolvedValue([]);
   vi.mocked(staffApi.myVenues).mockResolvedValue([
     { venue_id: 1, name: 'Riverside', is_master: true, groups: [] },
   ]);
@@ -208,5 +211,48 @@ describe('Schedule day list', () => {
   it('shows the empty state', async () => {
     setup(['BOOKING:ReadAny']);
     expect(await screen.findByText('No bookings on this day.')).toBeInTheDocument();
+  });
+});
+
+describe('Schedule header', () => {
+  it('titles the page with the Manila day, its ISO week and the venue', async () => {
+    setup();
+    expect(
+      await screen.findByRole('heading', { level: 1, name: /Friday, 23 October/ }),
+    ).toHaveTextContent('2026 · Week 43');
+    expect(await screen.findByText('Schedule / Riverside')).toBeInTheDocument();
+  });
+
+  it('changes day with the arrow keys, but not while typing', async () => {
+    setup();
+    await screen.findByRole('heading', { level: 1 });
+
+    await userEvent.keyboard('{ArrowRight}');
+    expect(onDateChange).toHaveBeenLastCalledWith('2026-10-24');
+    await userEvent.keyboard('{ArrowLeft}');
+    expect(onDateChange).toHaveBeenLastCalledWith('2026-10-22');
+
+    onDateChange.mockClear();
+    await userEvent.click(await screen.findByRole('button', { name: PAST_CELL }));
+    await userEvent.type(screen.getByLabelText('Notes (optional)'), '{ArrowRight}');
+    expect(onDateChange).not.toHaveBeenCalled();
+  });
+
+  it('"New booking" selects the next open hour and raises the walk-in bar', async () => {
+    setup();
+    await screen.findByRole('button', { name: PAST_CELL });
+
+    await userEvent.click(screen.getByRole('button', { name: 'New booking' }));
+
+    // Not today, so the day's first free hour: 12 AM on the first court.
+    expect(await screen.findByRole('button', { name: 'Book walk-in' })).toBeInTheDocument();
+    expect(screen.getByText(/Court 2 · 12 AM – 1 AM · 1 hour/)).toBeInTheDocument();
+  });
+
+  it('offers no "New booking" without BOOKING:CreateWalkIn', async () => {
+    setup(['BOOKING:ReadAny']);
+    await screen.findByRole('heading', { level: 1 });
+    await waitFor(() => expect(authApi.permissions).toHaveBeenCalled());
+    expect(screen.queryByRole('button', { name: 'New booking' })).not.toBeInTheDocument();
   });
 });

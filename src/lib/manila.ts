@@ -35,6 +35,10 @@ export function manilaDayOf(iso: string): string {
 }
 
 /** The Manila hour (0-23) of the instant `now`. */
+export function manilaHourNow(now: Date = new Date()): number {
+  return manilaHourOf(now);
+}
+
 function manilaHourOf(now: Date): number {
   return Number(parts(now, { hour: '2-digit', hourCycle: 'h23' }).hour);
 }
@@ -141,4 +145,46 @@ export function manilaInstant(day: string, hour: number): string {
   if (!parseDay(day)) throw new Error(`Invalid day: ${day}`);
   if (!Number.isInteger(hour) || hour < 0 || hour > 23) throw new Error(`Invalid hour: ${hour}`);
   return `${day}T${String(hour).padStart(2, '0')}:00:00+08:00`;
+}
+
+/** 0 = Monday … 6 = Sunday, for a calendar day string. */
+function weekdayIndex(day: string): number {
+  const date = parseDay(day);
+  if (!date) throw new Error(`Invalid day: ${day}`);
+  return (date.getUTCDay() + 6) % 7;
+}
+
+/** The Monday of the week containing `day` — weeks start on Monday. */
+export function mondayOf(day: string): string {
+  return addDays(day, -weekdayIndex(day));
+}
+
+/** ISO-8601 week: the week belongs to the year of its Thursday, so
+ * 1 Jan 2027 (a Friday) is week 53 of 2026. */
+export function isoWeek(day: string): { year: number; week: number } {
+  const thursday = parseDay(addDays(day, 3 - weekdayIndex(day)));
+  if (!thursday) throw new Error(`Invalid day: ${day}`);
+  const year = thursday.getUTCFullYear();
+  const jan1 = Date.UTC(year, 0, 1);
+  return { year, week: Math.floor((thursday.getTime() - jan1) / 86_400_000 / 7) + 1 };
+}
+
+/** { title: "Monday, 7 September", weekday: "MON", day: "7" }. */
+export function formatDayParts(day: string): { title: string; weekday: string; day: string } {
+  const p = parts(dayAnchor(day), { weekday: 'long', day: 'numeric', month: 'long' });
+  return {
+    title: `${p.weekday}, ${p.day} ${p.month}`,
+    weekday: (p.weekday ?? '').slice(0, 3).toUpperCase(),
+    day: p.day ?? '',
+  };
+}
+
+/** "7–13 Sep" for the week starting `monday`; "28 Sep – 4 Oct" across months. */
+export function formatWeekRange(monday: string): string {
+  const end = addDays(monday, 6);
+  const a = parts(dayAnchor(monday), { day: 'numeric', month: 'short' });
+  const b = parts(dayAnchor(end), { day: 'numeric', month: 'short' });
+  return a.month === b.month
+    ? `${a.day}–${b.day} ${b.month}`
+    : `${a.day} ${a.month} – ${b.day} ${b.month}`;
 }
