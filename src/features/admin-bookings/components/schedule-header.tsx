@@ -2,8 +2,6 @@ import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { addDays, formatDayParts, isoWeek, manilaToday } from '@/lib/manila';
 
-/** Breadcrumb, the Manila day as the page title, and the day controls. "New
- * booking" is the screen's one primary action. */
 export function ScheduleHeader({
   venueName,
   date,

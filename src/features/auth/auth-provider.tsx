@@ -55,10 +55,6 @@ async function rotate(): Promise<TokenPair> {
   return run();
 }
 
-/**
- * Owns the session: access token in memory, refresh token in localStorage,
- * both wired into the shared apiClient. The ONLY place that injects them.
- */
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>('loading');
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -93,7 +89,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return me;
   }, []);
 
-  // ApiClient calls this on a 401 (and coalesces concurrent calls).
   useEffect(() => {
     apiClient().setRefreshHandler(async () => {
       try {

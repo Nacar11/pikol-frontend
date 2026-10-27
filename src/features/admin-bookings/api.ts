@@ -25,7 +25,6 @@ export const adminBookingsApi = {
       .then((r) => AdminBookingPageSchema.parse(r));
   },
 
-  /** Booked vs bookable court-hours per Manila day, `days` from `from`. */
   occupancy(
     venueId: number,
     from: string,

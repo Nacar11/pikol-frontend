@@ -27,12 +27,10 @@ const HOUR_OPTIONS = Array.from({ length: 24 }, (_, h) => ({
 }));
 const HOUR_MS = 3_600_000;
 
-/** One click fills the reason; the field stays free text. */
 const REASONS = ['Maintenance', 'Private event', 'Tournament', 'Weather'];
 
 type Range = { startDay: string; startHour: number; endDay: string; endHour: number };
 
-/** A Manila day + hour moved by whole hours, through the instant. */
 function shift(day: string, hour: number, hours: number): { day: string; hour: number } {
   const at = new Date(Date.parse(manilaInstant(day, hour)) + hours * HOUR_MS);
   return { day: manilaToday(at), hour: manilaHourNow(at) };
@@ -71,7 +69,6 @@ function sameRange(a: Range, b: Range): boolean {
   );
 }
 
-/** "Tue 27 Oct · 4 PM – 5 PM", or both days when the range crosses midnight. */
 function describe(r: Range): string {
   const start = formatDayChip(r.startDay);
   const from = `${start.weekday} ${start.date}`;

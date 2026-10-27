@@ -1,6 +1,5 @@
 import { cn } from '@/lib/cn';
 
-/** "01 TITLE … aside": the heading of a numbered section. */
 export function SectionLabel({
   n,
   id,

@@ -5,7 +5,6 @@ import { useAuth } from '@/features/auth';
 import { adminBookingsApi } from '../api';
 import { adminBookingKeys } from '../keys';
 
-/** Paid bookings that could not be housed, a page at a time. */
 export function useResolutionQueue() {
   const { status } = useAuth();
   return useInfiniteQuery({

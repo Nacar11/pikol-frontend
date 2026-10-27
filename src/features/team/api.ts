@@ -4,7 +4,6 @@ import { UserPageSchema, UserSchema, type Invite, type User, type UserPage } fro
 const PAGE_SIZE = 20;
 
 export const teamApi = {
-  /** `q` matches name or email on the server; blank lists everyone. */
   list(page: number, q = '', client: ApiClient = apiClient()): Promise<UserPage> {
     return client
       .get<unknown>('/admin/users', {

@@ -1,9 +1,5 @@
 import { cn } from '@/lib/cn';
 
-/**
- * The top of a console page: a section breadcrumb, the title, one line of
- * context and the page's one primary action on the right.
- */
 export function PageHeader({
   section,
   title,

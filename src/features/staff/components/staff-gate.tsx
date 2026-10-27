@@ -2,7 +2,6 @@
 
 import { RequirePermission } from '@/features/auth';
 
-/** A page-level permission gate for staff screens. */
 export function StaffGate({
   permission,
   children,

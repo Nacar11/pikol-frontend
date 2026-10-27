@@ -28,7 +28,6 @@ function allSelectable(
   return true;
 }
 
-/** Pure tap rules for building a run of consecutive hours on one court. */
 export function tapCell(
   sel: Selection | null,
   grid: Availability,
@@ -53,7 +52,6 @@ export function tapCell(
   return fresh;
 }
 
-/** Drops a selection that a fresh grid no longer supports. */
 export function reconcile(
   sel: Selection | null,
   grid: Availability,

@@ -18,12 +18,6 @@ function isActive(pathname: string, href: string): boolean {
 }
 
 /**
- * The staff console frame, asima's shape: a fixed black sidebar on md+, a
- * drawer below it. On md+ the sidebar collapses to an icon rail; the choice
- * is remembered on this browser. Labels stay in the DOM as sr-only, so the
- * rail's links keep their accessible names. Every link is filtered by the permissions held at the
- * active venue — never by role.
- *
  * `badges` maps a link's href to a count element. It is passed in, not
  * imported, because the slices that own the counts already import this one.
  */

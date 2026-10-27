@@ -18,7 +18,6 @@ export type AdminBooking = z.infer<typeof AdminBookingSchema>;
 export const AdminBookingPageSchema = pageSchema(AdminBookingSchema);
 export type AdminBookingPage = Page<AdminBooking>;
 
-/** GET /admin/bookings/occupancy — one Manila day of the two-week strip. */
 export const DayOccupancySchema = z.object({
   date: z.string(),
   booked_hours: z.number(),

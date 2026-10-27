@@ -23,18 +23,15 @@ function meridiem(value: string | undefined): string {
   return (value ?? '').replace(/\./g, '').toUpperCase();
 }
 
-/** The Manila calendar day containing `now`, as `YYYY-MM-DD`. */
 export function manilaToday(now: Date = new Date()): string {
   const p = parts(now, { year: 'numeric', month: '2-digit', day: '2-digit' });
   return `${p.year}-${p.month}-${p.day}`;
 }
 
-/** The Manila calendar day containing the instant `iso`. */
 export function manilaDayOf(iso: string): string {
   return manilaToday(new Date(iso));
 }
 
-/** The Manila hour (0-23) of the instant `now`. */
 export function manilaHourNow(now: Date = new Date()): number {
   return manilaHourOf(now);
 }
@@ -76,12 +73,10 @@ export function addDays(day: string, n: number): string {
   return date.toISOString().slice(0, 10);
 }
 
-/** Validates the `?date=` param: well-formed and a real calendar day. */
 export function isManilaDay(value: string): boolean {
   return parseDay(value) !== null;
 }
 
-/** "6 PM" / "12 AM". */
 export function formatHour(iso: string): string {
   const p = parts(new Date(iso), { hour: 'numeric', hour12: true });
   return `${p.hour} ${meridiem(p.dayPeriod)}`;
@@ -95,7 +90,6 @@ function dayAnchor(day: string): Date {
   return date;
 }
 
-/** { weekday: "Fri", date: "23 Oct" }. */
 export function formatDayChip(day: string): { weekday: string; date: string } {
   const p = parts(dayAnchor(day), {
     weekday: 'short',
@@ -105,7 +99,6 @@ export function formatDayChip(day: string): { weekday: string; date: string } {
   return { weekday: p.weekday ?? '', date: `${p.day} ${p.month}` };
 }
 
-/** "Friday, 23 October 2026". */
 export function formatDayLong(day: string): string {
   const p = parts(dayAnchor(day), {
     weekday: 'long',
@@ -116,12 +109,10 @@ export function formatDayLong(day: string): string {
   return `${p.weekday}, ${p.day} ${p.month} ${p.year}`;
 }
 
-/** "6 PM – 8 PM". */
 export function formatTimeRange(startsIso: string, endsIso: string): string {
   return `${formatHour(startsIso)} – ${formatHour(endsIso)}`;
 }
 
-/** "23 Oct, 6:00 PM". */
 export function formatDateTime(iso: string): string {
   const p = parts(new Date(iso), {
     day: 'numeric',
@@ -133,7 +124,6 @@ export function formatDateTime(iso: string): string {
   return `${p.day} ${p.month}, ${p.hour}:${p.minute} ${meridiem(p.dayPeriod)}`;
 }
 
-/** "6 PM" for hour index 18 (0 → "12 AM", 12 → "12 PM"). */
 export function formatHourOfDay(hour: number): string {
   if (!Number.isInteger(hour) || hour < 0 || hour > 23) throw new Error(`Invalid hour: ${hour}`);
   return `${hour % 12 === 0 ? 12 : hour % 12} ${hour < 12 ? 'AM' : 'PM'}`;
@@ -147,7 +137,6 @@ export function manilaInstant(day: string, hour: number): string {
   return `${day}T${String(hour).padStart(2, '0')}:00:00+08:00`;
 }
 
-/** 0 = Monday … 6 = Sunday, for a calendar day string. */
 function weekdayIndex(day: string): number {
   const date = parseDay(day);
   if (!date) throw new Error(`Invalid day: ${day}`);
@@ -169,7 +158,6 @@ export function isoWeek(day: string): { year: number; week: number } {
   return { year, week: Math.floor((thursday.getTime() - jan1) / 86_400_000 / 7) + 1 };
 }
 
-/** { title: "Monday, 7 September", weekday: "MON", day: "7" }. */
 export function formatDayParts(day: string): { title: string; weekday: string; day: string } {
   const p = parts(dayAnchor(day), { weekday: 'long', day: 'numeric', month: 'long' });
   return {
@@ -179,7 +167,6 @@ export function formatDayParts(day: string): { title: string; weekday: string; d
   };
 }
 
-/** "7–13 Sep" for the week starting `monday`; "28 Sep – 4 Oct" across months. */
 export function formatWeekRange(monday: string): string {
   const end = addDays(monday, 6);
   const a = parts(dayAnchor(monday), { day: 'numeric', month: 'short' });

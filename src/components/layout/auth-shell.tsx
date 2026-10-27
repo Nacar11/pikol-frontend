@@ -9,7 +9,6 @@ function Brand() {
   );
 }
 
-/** The frame for every (auth) screen: brand, one card, one job. */
 export function AuthShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col items-center px-4 py-10 sm:justify-center">

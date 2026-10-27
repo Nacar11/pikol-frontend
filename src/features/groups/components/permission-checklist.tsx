@@ -40,7 +40,6 @@ export function PermissionChecklist({
 
   useEffect(() => onDirtyChange(dirty), [dirty, onDirtyChange]);
 
-  // Leaving the page with unsaved changes asks first.
   useEffect(() => {
     if (!dirty) return;
     const warn = (e: BeforeUnloadEvent) => e.preventDefault();

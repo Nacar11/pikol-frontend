@@ -30,7 +30,6 @@ import { StaffCourtGrid } from './staff-court-grid';
 import { WalkInBar } from './walk-in-bar';
 import { WeekStrip } from './week-strip';
 
-/** Arrow keys change the day, except while typing. */
 function useDayKeys(date: string, onDateChange: (day: string) => void) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -45,8 +44,6 @@ function useDayKeys(date: string, onDateChange: (day: string) => void) {
   }, [date, onDateChange]);
 }
 
-/** The staff home screen: the day header, the two-week strip, the grid and
- * the day's bookings. */
 export function Schedule({
   date,
   onDateChange,

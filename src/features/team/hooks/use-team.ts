@@ -11,7 +11,6 @@ import { teamApi } from '../api';
 import { teamKeys } from '../keys';
 import type { Invite } from '../schemas';
 
-/** The team, a page at a time, optionally narrowed by name or email. */
 export function useTeam(q = '') {
   const { status } = useAuth();
   return useInfiniteQuery({

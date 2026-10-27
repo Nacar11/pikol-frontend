@@ -11,8 +11,6 @@ const ORDER: BlockKind[] = [
   'CLOSED',
 ];
 
-/** What each block means, drawn with the blocks' own styles, and the day's
- * total booked court-hours. */
 export function ScheduleLegend({ booked, bookable }: { booked: number; bookable: number }) {
   return (
     <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground">

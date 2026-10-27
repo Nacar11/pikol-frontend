@@ -1,4 +1,3 @@
-/** Plain-English labels, grouped as the checkboxes show them. */
 export const PERMISSION_SECTIONS: { title: string; codes: { code: string; label: string }[] }[] = [
   {
     title: 'Bookings',

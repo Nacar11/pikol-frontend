@@ -51,7 +51,6 @@ export function liveStatus(b: AdminBooking, now: number): DisplayStatus {
   return b.booking_status;
 }
 
-/** Null when the booking no longer holds its court (cancelled, expired). */
 export function blockKind(b: AdminBooking, now: number): BlockKind | null {
   if (b.type === 'MAINTENANCE') return 'CLOSED';
   const status = liveStatus(b, now);
@@ -63,7 +62,6 @@ export function blockKind(b: AdminBooking, now: number): BlockKind | null {
 export type Block = {
   booking: AdminBooking;
   courtId: number;
-  /** Inclusive index into the day's 24 slots. */
   start: number;
   span: number;
   kind: BlockKind;
@@ -90,7 +88,6 @@ export function blocksFor(grid: Availability, bookings: AdminBooking[], now: num
   return blocks;
 }
 
-/** Booked (sessions, not closures) and closed hours per court. */
 export function courtHours(blocks: Block[], courtId: number): { booked: number; closed: number } {
   let booked = 0;
   let closed = 0;
@@ -102,7 +99,6 @@ export function courtHours(blocks: Block[], courtId: number): { booked: number; 
   return { booked, closed };
 }
 
-/** "₱500 / hr", or "from ₱400 / hr" when the day's rules vary by hour. */
 export function priceLabel(court: GridCourt): string {
   const prices = court.slots.map((s) => s.price_centavos);
   if (prices.length === 0) return '';
@@ -114,7 +110,6 @@ export function priceLabel(court: GridCourt): string {
 type DayKpis = {
   bookedHours: number;
   bookableHours: number;
-  /** 0–100, rounded. */
   utilisation: number;
   sessions: number;
   /** Frozen totals of the day's live sessions, paid or not. */

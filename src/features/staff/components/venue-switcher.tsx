@@ -5,7 +5,6 @@ import { Select } from '@/components/ui/select';
 import { cn } from '@/lib/cn';
 import { useStaffVenue } from '../use-staff-venue';
 
-/** Wide enough for a venue name, even from the collapsed rail. */
 const LIST_WIDTH = 240;
 
 /**

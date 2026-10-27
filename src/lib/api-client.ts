@@ -1,6 +1,5 @@
 import { generateRequestId } from '@/lib/request-id';
 
-/** Any non-2xx response. `body` is the parsed error envelope when there is one. */
 export class ApiError extends Error {
   constructor(
     public readonly status: number,
@@ -68,7 +67,6 @@ export class ApiClient {
     return this.request<T>('POST', path, { ...opts, body });
   }
 
-  /** Replaces a whole resource, e.g. a group's permission set. */
   put<T = unknown>(path: string, body?: unknown, opts?: RequestOptions): Promise<T> {
     return this.request<T>('PUT', path, { ...opts, body });
   }

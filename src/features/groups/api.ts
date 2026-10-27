@@ -19,8 +19,6 @@ import {
 const LIMIT = 200;
 const MEMBER_PAGE = 50;
 
-/** /admin/user-groups and /admin/permissions. One resource behind both the
- * owner's Masters page and a venue master's Venue staff page. */
 export const groupsApi = {
   list(params: GroupListParams, client: ApiClient = apiClient()): Promise<GroupPage> {
     return client

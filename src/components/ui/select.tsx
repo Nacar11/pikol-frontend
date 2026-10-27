@@ -24,12 +24,6 @@ const PAGE = 10;
  * aria-activedescendant, and the list renders in a portal so a scrolling
  * parent (the sidebar) cannot clip it. It flips above the trigger when the
  * space below is short.
- *
- * Keyboard: ↓/↑/Enter/Space open; ↑/↓, Home/End, PageUp/PageDown move;
- * Enter/Space/Tab choose; Escape closes; typing jumps to a label.
- *
- * `renderTrigger` replaces the trigger's content (the venue switcher's card);
- * the trigger stays the same button either way.
  */
 export function Select({
   id,
@@ -77,7 +71,6 @@ export function Select({
 
   const enabled = useCallback((i: number) => !!options[i] && !options[i]!.disabled, [options]);
 
-  /** The next enabled index from `from` in `step` direction, clamped. */
   const step = useCallback(
     (from: number, by: number) => {
       const dir = Math.sign(by) || 1;
@@ -186,7 +179,6 @@ export function Select({
     }
   }
 
-  // Place the list against the trigger, flipping up when below is short.
   const place = useCallback(() => {
     const trigger = triggerRef.current;
     if (!trigger) return;

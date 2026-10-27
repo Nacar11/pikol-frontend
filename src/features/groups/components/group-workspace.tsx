@@ -10,12 +10,6 @@ import { usePermissionCatalogue } from '../hooks/use-groups';
 import type { Group } from '../schemas';
 import { GroupDetail } from './group-detail';
 import { GroupList } from './group-list';
-
-/**
- * The master-detail layout both group pages share: the list on the left,
- * the chosen group on the right. Switching away from unsaved permission
- * changes asks first.
- */
 export function GroupWorkspace({
   groups,
   listLabel,

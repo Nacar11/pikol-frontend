@@ -87,7 +87,6 @@ function VenueStaffScreen() {
   );
 }
 
-/** The dashed "add" tile under the list, as on Courts and Venues. */
 function NewGroupTile({
   venueId,
   open,

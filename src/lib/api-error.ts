@@ -15,13 +15,11 @@ function envelope(err: unknown): Envelope | null {
   return typeof body === 'object' && body !== null ? (body as Envelope) : null;
 }
 
-/** The machine-readable code to branch on, e.g. EMAIL_NOT_VERIFIED. */
 export function errorCode(err: unknown): string | null {
   const code = envelope(err)?.code;
   return typeof code === 'string' ? code : null;
 }
 
-/** The best sentence to show a person. */
 export function errorMessage(err: unknown, fallback = FALLBACK): string {
   const detail = envelope(err)?.detail;
   if (typeof detail === 'string' && detail) return detail;

@@ -94,8 +94,6 @@ const STAFF_LINKS: StaffLink[] = [
   },
 ];
 
-/** The links the caller may follow, grouped in section order; a section
- * with none is left out entirely, header and all. */
 export function visibleSections(
   permissions: readonly string[],
 ): { section: StaffSection; links: StaffLink[] }[] {

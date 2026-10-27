@@ -58,7 +58,6 @@ export const setupApi = {
     return client.patch<unknown>(`/admin/courts/${id}`, body).then((r) => CourtSchema.parse(r));
   },
 
-  /** Each court's rate this hour and hours booked today, in one request. */
   courtSummaries(venueId: number, client: ApiClient = apiClient()): Promise<CourtSummary[]> {
     return client
       .get<unknown>(`/admin/venues/${venueId}/courts/summary`)
@@ -103,7 +102,6 @@ export const setupApi = {
     return client.delete<void>(`/admin/price-rules/${id}`);
   },
 
-  /** The 24 resolved prices of a Manila day. */
   dayPrices(
     courtId: number,
     date: string,

@@ -5,7 +5,6 @@ import { formatPeso } from '@/lib/money';
 
 type Props = {
   courtName: string;
-  /** Server ISO string of the first selected hour. */
   startsAt: string;
   hours: number;
   subtotal: number;
@@ -15,7 +14,6 @@ type Props = {
   pending: boolean;
 };
 
-/** The walk-in selection summary and the one way to act on it. */
 export function WalkInBar({
   courtName,
   startsAt,

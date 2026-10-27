@@ -1,6 +1,5 @@
 import { z } from 'zod';
 
-/** The list envelope every collection endpoint returns. */
 export function pageSchema<T extends z.ZodTypeAny>(item: T) {
   return z.object({
     data: z.array(item),

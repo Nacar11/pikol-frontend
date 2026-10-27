@@ -1,6 +1,5 @@
 import { z } from 'zod';
 
-/** A group as the backend's GroupRef carries it (ADR 0003). */
 export const GroupKindSchema = z.enum(['CUSTOMER', 'MASTER', 'STAFF']);
 
 const GroupRefSchema = z.object({
@@ -23,10 +22,8 @@ export const UserSchema = z.object({
   groups: z.array(GroupRefSchema),
 });
 
-/** GET /users/me — UserOut plus the Customer-group axis. */
 export type User = z.infer<typeof UserSchema>;
 
-/** GET /users/me — UserOut plus the Customer-group axis. */
 export const AuthUserSchema = UserSchema.extend({ is_customer: z.boolean() });
 export type AuthUser = z.infer<typeof AuthUserSchema>;
 
@@ -39,8 +36,6 @@ export const TokenPairSchema = z.object({
 export type TokenPair = z.infer<typeof TokenPairSchema>;
 
 export const PermissionsSchema = z.array(z.string());
-
-// ── form inputs ─────────────────────────────────────────────────────────
 
 const email = z.string().trim().min(1, 'Enter your email.').email('Enter a valid email.');
 const newPassword = z

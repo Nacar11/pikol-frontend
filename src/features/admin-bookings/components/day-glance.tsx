@@ -14,10 +14,7 @@ import { BLOCK_LABELS, blockKind, blocksFor, dayKpis, liveStatus } from '../sche
 import type { AdminBooking } from '../schemas';
 import { who } from './booking-block';
 
-/**
- * "Day at a glance": four KPI tiles and the day's bookings in time order.
- * Reads the same cached queries as the grid, so the two always agree.
- */
+/** Reads the same cached queries as the grid, so the two always agree. */
 export function DayGlance({ venueId, date }: { venueId: number; date: string }) {
   const grid = useAvailability(venueId, date, { refetchInterval: REFETCH_MS });
   const bookings = useDayBookings(venueId, date);
@@ -105,7 +102,6 @@ function Tile({ label, value, note }: { label: string; value: string; note: stri
   );
 }
 
-/** One line per booking; cancelled and lapsed ones stay listed, marked. */
 function Row({ booking, now }: { booking: AdminBooking; now: number }) {
   const kind = blockKind(booking, now);
   const status = kind

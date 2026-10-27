@@ -5,7 +5,6 @@ import { authApi } from './api';
 import { authKeys } from './keys';
 import { useAuth } from './use-auth';
 
-/** The caller's permission codes — what every UI gate reads (spec §6.1). */
 export function usePermissions() {
   const { status } = useAuth();
   return useQuery({

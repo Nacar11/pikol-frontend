@@ -27,7 +27,6 @@ function grouped(rows: AdminBooking[]): ClosureGroup[] {
   return [...groups.values()];
 }
 
-/** "6 AM – 12 PM · 6 h", naming the end day when it is not the start's. */
 function timeLine(b: AdminBooking): string {
   const hours = (Date.parse(b.ends_at) - Date.parse(b.starts_at)) / HOUR_MS;
   const endDay = manilaDayOf(new Date(Date.parse(b.ends_at) - 1).toISOString());

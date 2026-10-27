@@ -5,7 +5,6 @@ import { useAuth } from '@/features/auth';
 import { adminBookingsApi } from '../api';
 import { adminBookingKeys } from '../keys';
 
-/** Staff screens refetch this often. */
 export const REFETCH_MS = 30_000;
 
 /** Every booking the server returns for one venue-day, in server order.

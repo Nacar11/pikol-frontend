@@ -10,8 +10,6 @@ import { Button } from '@/components/ui/button';
 import { errorMessage } from '@/lib/api-error';
 import { NewPasswordInputSchema, type NewPasswordInput } from '../schemas';
 
-/** Shared by reset-password and accept-invitation: both are "a token from
- * the email, plus a new password". */
 export function NewPasswordForm({
   token,
   title,

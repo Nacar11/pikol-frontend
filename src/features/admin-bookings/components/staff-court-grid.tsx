@@ -17,15 +17,10 @@ type Props = {
   selection: Selection | null;
   /** Without it the grid is read-only: no open cell is a button. */
   onCellTap?: (courtId: number, index: number) => void;
-  /** Today: the hour to scroll to on load. */
   scrollToHour: number | null;
 };
 
-/**
- * Time down, one column per court (the reference layout). A booking is one
- * block across its hours; open hours are buttons when walk-ins are allowed.
- * The frame scrolls on its own — the page never scrolls sideways.
- */
+/** The frame scrolls on its own — the page never scrolls sideways. */
 export function StaffCourtGrid({ data, blocks, selection, onCellTap, scrollToHour }: Props) {
   const frame = useRef<HTMLDivElement>(null);
 

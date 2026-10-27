@@ -108,7 +108,6 @@ function Parameters() {
   );
 }
 
-/** The value as people read it: "15 min", "₱500", "On". */
 function Shown({ parameter }: { parameter: Parameter }) {
   const known = KNOWN[parameter.key];
   if (parameter.value_type === 'bool') return <>{parameter.value === 'true' ? 'On' : 'Off'}</>;

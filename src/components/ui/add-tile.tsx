@@ -1,7 +1,6 @@
 import { Plus } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
-/** The dashed "add one" tile closing a grid (`lg`) or a list (`sm`). */
 export function AddTile({
   title,
   hint,
