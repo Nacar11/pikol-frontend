@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useAuth, usePermissions } from '@/features/auth';
 import { cn } from '@/lib/cn';
+import { readStorage, writeStorage } from '@/lib/storage';
 import { SECTION_LABELS, visibleSections } from '../nav-links';
 import { useStaffVenue } from '../use-staff-venue';
 import { VenueSwitcher } from './venue-switcher';
@@ -14,23 +15,6 @@ const SIDEBAR_STORAGE_KEY = 'pikol:staff_sidebar';
 
 function isActive(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
-}
-
-/** Browser storage can be absent or throw; a forgotten rail width is fine. */
-function rememberedCollapsed(): boolean {
-  try {
-    return window.localStorage.getItem(SIDEBAR_STORAGE_KEY) === 'collapsed';
-  } catch {
-    return false;
-  }
-}
-
-function rememberCollapsed(collapsed: boolean): void {
-  try {
-    window.localStorage.setItem(SIDEBAR_STORAGE_KEY, collapsed ? 'collapsed' : 'expanded');
-  } catch {
-    // Not remembering is fine.
-  }
 }
 
 /**
@@ -62,14 +46,14 @@ export function StaffShell({
   useEffect(() => setOpen(false), [pathname]);
 
   useEffect(() => {
-    setCollapsed(rememberedCollapsed());
+    setCollapsed(readStorage(SIDEBAR_STORAGE_KEY) === 'collapsed');
     const frame = requestAnimationFrame(() => setAnimate(true));
     return () => cancelAnimationFrame(frame);
   }, []);
 
   const toggleCollapsed = () => {
     setCollapsed((c) => {
-      rememberCollapsed(!c);
+      writeStorage(SIDEBAR_STORAGE_KEY, c ? 'expanded' : 'collapsed');
       return !c;
     });
   };
