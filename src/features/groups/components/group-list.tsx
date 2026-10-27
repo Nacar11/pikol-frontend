@@ -59,8 +59,8 @@ export function GroupList({
               selected ? 'bg-primary text-primary-foreground' : 'hover:bg-muted',
             )}
           >
-            <span className="min-w-0">
-              <span className="block truncate text-sm font-semibold">{titleFor(g)}</span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-semibold">{titleFor(g)}</span>
               <span
                 className={cn(
                   'block text-xs tabular-nums',
@@ -72,7 +72,7 @@ export function GroupList({
               </span>
             </span>
             {tag && (
-              <span className="shrink-0 rounded border border-current px-1.5 text-[10px] font-medium uppercase tracking-wider opacity-70">
+              <span className="max-w-[7rem] shrink-0 rounded border border-current px-1.5 text-center text-[10px] font-medium uppercase leading-tight tracking-wider opacity-70">
                 {tag}
               </span>
             )}

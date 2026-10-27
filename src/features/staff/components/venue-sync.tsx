@@ -3,7 +3,14 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { apiClient } from '@/lib/api-client';
+import { staffKeys } from '../keys';
 import { useStaffVenue } from '../use-staff-venue';
+
+const VENUE_LIST = JSON.stringify(staffKeys.myVenues());
+
+function isVenueList(key: readonly unknown[]): boolean {
+  return JSON.stringify(key) === VENUE_LIST;
+}
 
 /**
  * Feeds the active venue to every staff request as X-Venue-ID, and refetches
@@ -32,11 +39,15 @@ export function StaffVenueSync({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (previous.current === venueId) return;
+    // Only a real venue counts as a change: "none yet" is the venue list
+    // still loading, not a switch.
+    if (venueId === null || previous.current === venueId) return;
     previous.current = venueId;
     // Drop, not just refetch: stale data from the last venue must not show,
-    // and stale permissions must not gate the new one.
-    void queryClient.resetQueries();
+    // and stale permissions must not gate the new one. Never the venue list
+    // itself — it decides venueId, so resetting it empties the venue, which
+    // would read as another change and reset again, forever.
+    void queryClient.resetQueries({ predicate: (q) => !isVenueList(q.queryKey) });
   }, [venueId, queryClient]);
 
   return <>{children}</>;

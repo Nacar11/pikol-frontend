@@ -27,7 +27,7 @@ export function ScheduleHeader({
         </p>
         <h1 className="mt-1 text-3xl font-bold tracking-tight">
           {title}
-          <span className="ml-3 align-middle text-sm font-normal tabular-nums tracking-normal text-muted-foreground">
+          <span className="mt-1 block whitespace-nowrap text-sm font-normal tabular-nums tracking-normal text-muted-foreground sm:ml-3 sm:mt-0 sm:inline sm:align-middle">
             {year} · Week {week}
           </span>
         </h1>

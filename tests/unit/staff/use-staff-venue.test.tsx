@@ -133,6 +133,24 @@ describe('StaffVenueSync', () => {
     await waitFor(() => expect(fetches.at(-1)).toBe('2'));
   });
 
+  it('settles after choosing a venue instead of resetting forever', async () => {
+    // Regression: resetting the venue list itself emptied the active venue,
+    // which counted as another change — an endless reset loop that left
+    // every page on its spinner.
+    vi.mocked(staffApi.myVenues).mockResolvedValue([mine(2), mine(5)]);
+    renderWithAuth(
+      <StaffVenueSync>
+        <Child />
+      </StaffVenueSync>,
+      { status: 'authenticated', user },
+    );
+    await waitFor(() => expect(fetches).toContain('2'));
+    await new Promise((r) => setTimeout(r, 300));
+
+    expect(staffApi.myVenues).toHaveBeenCalledTimes(1);
+    expect(fetches.filter((v) => v === null).length).toBeLessThanOrEqual(1);
+  });
+
   it('stops sending the header once the console unmounts', async () => {
     vi.mocked(staffApi.myVenues).mockResolvedValue([mine(2)]);
     const view = renderWithAuth(<StaffVenueSync>{null}</StaffVenueSync>, {

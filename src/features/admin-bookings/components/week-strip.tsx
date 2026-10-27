@@ -54,7 +54,7 @@ export function WeekStrip({
         {weeks.map((week) => (
           <div
             key={week[0]}
-            className="flex min-w-[22rem] flex-1 flex-col border-l border-border first:border-l-0"
+            className="flex min-w-[19rem] flex-1 flex-col border-l border-border first:border-l-0"
           >
             <p className="border-b border-border py-1 text-center text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
               Week {isoWeek(week[0]!).week} · {formatWeekRange(week[0]!)}
