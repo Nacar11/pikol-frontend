@@ -43,8 +43,8 @@ for that app. A signed-in non-staff user lands on `/customer-app`.
 | `availability` | the day availability read and the slot-selection reducer |
 | `bookings` | the booking schema and `StatusBadge`, reused by the console |
 | `admin-bookings` | the Schedule (header, two-week strip, court grid, day-at-a-glance), the occupancy read, booking actions, the resolution queue |
-| `staff` | `StaffShell` (the sidebar), `StaffOnly`, `StaffGate`, `StaffVenueSync`, `useStaffVenue`, `VenueSwitcher`, `STAFF_LINKS` |
-| `setup` | venues, courts, price rules and the price preview, closures |
+| `staff` | `StaffShell` (the sidebar), `StaffOnly`, `StaffGate`, `StaffVenueSync`, `useStaffVenue`, `VenueRequired`, `VenueSwitcher`, `STAFF_LINKS` |
+| `setup` | venues, courts, price rules and the price preview, closures; `useCourtSummaries` / `useVenueSummaries` (one request per page for the cards' stats) |
 | `team` | Staff accounts: invites into a group, resend/revoke, deactivate |
 | `groups` | user groups: Setup → Venue staff and Masters → User groups |
 | `parameters` | the owner's business-parameters screen |
@@ -109,15 +109,37 @@ it needs a rebuild. **`next.config.ts` fails a production build without it**
 
 The dev server runs on **port 3000** — the backend's CORS allow-list.
 
+## Shared UI
+
+Before hand-writing markup, use what exists (catalogue:
+`../docs/standard/cleanup-pass.md` §5): `PageHeader`, `SectionLabel`,
+`StatStrip`, `AddTile`, `Pill`, `Avatar`, `Skeleton`, `Select` (never a native
+`<select>`), `buttonVariants` for links styled as buttons, and `VenueRequired`
+for pages that need the active venue. Extract a new one only with two real
+callers and no per-caller flag.
+
 ## Commands
 
 ```bash
 npm install
 npm run dev                 # http://localhost:3000, backend on :8000
-npm run lint:ci && npm run format:check && npm run typecheck && npm test && npm run build
+npm run lint:ci && npm run format:check && npm run typecheck && npm test && npm run deadcode
+NEXT_DIST_DIR=.next-e2e npm run build   # never plain `npm run build` under a running `npm run dev`
+npm run e2e                 # Playwright, real backend :8100 + pikol_e2e, Next :3100
 ```
 
-CI runs all five. Run `npm run format` before committing.
+CI runs lint, format, typecheck, unit tests and the build. Run `npm run
+format` before committing.
+
+`npm run deadcode` runs knip twice: normally, and with `--production`, which
+ignores tests — so code only its own tests call shows up. An export that
+exists purely as a test seam is tagged `/** @internal */`.
+
+`npm run e2e` recreates and seeds `pikol_e2e` (Docker Postgres must be up),
+starts the backend and a production build, and runs `e2e/*.spec.ts`. Each
+test signs in through the API with its own refresh token (`e2e/fixtures.ts`):
+tokens rotate, and a shared one trips replay detection. Seeded logins:
+`owner.e2e@example.com` / `desk.e2e@example.com`, password `E2e-password-1`.
 
 ## Docs live in the parent repo
 
