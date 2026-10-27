@@ -14,11 +14,12 @@
     "lint": "next lint --fix",
     "lint:ci": "next lint",
     "typecheck": "tsc --noEmit",
-    "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"tests/**/*.{ts,tsx}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"tests/**/*.{ts,tsx}\"",
+    "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"tests/**/*.{ts,tsx}\" \"e2e/**/*.ts\" playwright.config.ts",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"tests/**/*.{ts,tsx}\" \"e2e/**/*.ts\" playwright.config.ts",
     "test": "vitest run",
     "test:watch": "vitest",
-    "deadcode": "knip"
+    "deadcode": "knip",
+    "e2e": "bash scripts/e2e-db.sh && playwright test"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -35,6 +36,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@playwright/test": "^1.56.1",
     "@tanstack/react-query-devtools": "^5.104.5",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.3",
