@@ -2,7 +2,7 @@ export { AuthProvider, REFRESH_STORAGE_KEY, type AuthStatus } from './auth-provi
 export { AuthGate } from './components/auth-gate';
 export { GuestGate } from './components/guest-gate';
 export { landingPath, type LandingPath } from './landing';
-export { GroupRefSchema, UserSchema } from './schemas';
+export { GroupKindSchema, GroupRefSchema, UserSchema } from './schemas';
 export type { AuthUser, GroupKind, GroupRef, User } from './schemas';
 export { useAuth } from './use-auth';
 export { usePermissions } from './use-permissions';

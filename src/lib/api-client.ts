@@ -11,7 +11,7 @@ export class ApiError extends Error {
   }
 }
 
-type Method = 'GET' | 'POST' | 'PATCH' | 'DELETE';
+type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 type Params = Record<string, string | number | boolean | undefined>;
 
 export type RequestOptions = {
@@ -66,6 +66,11 @@ export class ApiClient {
 
   post<T = unknown>(path: string, body?: unknown, opts?: RequestOptions): Promise<T> {
     return this.request<T>('POST', path, { ...opts, body });
+  }
+
+  /** Replaces a whole resource, e.g. a group's permission set. */
+  put<T = unknown>(path: string, body?: unknown, opts?: RequestOptions): Promise<T> {
+    return this.request<T>('PUT', path, { ...opts, body });
   }
 
   patch<T = unknown>(path: string, body?: unknown, opts?: RequestOptions): Promise<T> {

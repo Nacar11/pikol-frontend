@@ -57,7 +57,7 @@ describe('StaffShell', () => {
     await within(nav).findByRole('link', { name: 'Schedule' });
     expect(within(nav).getByText('Operations')).toBeInTheDocument();
     expect(within(nav).queryByText('Setup')).not.toBeInTheDocument();
-    for (const hidden of ['Courts', 'Staff', 'Venues', 'Parameters']) {
+    for (const hidden of ['Courts', 'Venue staff', 'Staff', 'Venues', 'Parameters']) {
       expect(within(nav).queryByRole('link', { name: hidden })).not.toBeInTheDocument();
     }
   });
@@ -75,7 +75,16 @@ describe('StaffShell', () => {
       within(nav)
         .getAllByRole('link')
         .map((a) => a.textContent),
-    ).toEqual(['Schedule', 'To resolve', 'Closures', 'Courts', 'Staff', 'Venues', 'Parameters']);
+    ).toEqual([
+      'Schedule',
+      'To resolve',
+      'Closures',
+      'Courts',
+      'Venue staff',
+      'Staff',
+      'Venues',
+      'Parameters',
+    ]);
   });
 
   it('renders a passed-in badge beside its link', async () => {

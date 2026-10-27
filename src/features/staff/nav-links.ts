@@ -5,6 +5,7 @@ import {
   LayoutGrid,
   MapPin,
   SlidersHorizontal,
+  UserCog,
   Users,
   type LucideIcon,
 } from 'lucide-react';
@@ -54,6 +55,13 @@ export const STAFF_LINKS: StaffLink[] = [
     permission: 'COURT:Manage',
     section: 'setup',
     icon: LayoutGrid,
+  },
+  {
+    href: '/staff/venue-staff',
+    label: 'Venue staff',
+    permission: 'USER:Manage',
+    section: 'setup',
+    icon: UserCog,
   },
   {
     href: '/staff/users',
