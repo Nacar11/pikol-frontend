@@ -16,6 +16,7 @@ export function checkoutFixture(over: Partial<Checkout> = {}): Checkout {
     total_centavos: 154500,
     checkout_url: null,
     refund_kind: null,
+    awaiting_payment: false,
     bookings: [
       {
         id: 11,

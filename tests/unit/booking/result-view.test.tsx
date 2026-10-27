@@ -19,7 +19,11 @@ function show() {
   });
 }
 
-beforeEach(() => vi.clearAllMocks());
+beforeEach(() => {
+  vi.clearAllMocks();
+  // Arriving asks Maya once; by default it has nothing new to say.
+  vi.mocked(checkoutApi.refresh).mockImplementation(() => checkoutApi.get(1));
+});
 afterEach(() => vi.useRealTimers());
 
 describe('ResultView', () => {
@@ -70,14 +74,55 @@ describe('ResultView', () => {
     );
   });
 
+  it('asks Maya once on arrival — the webhook may never have come', async () => {
+    vi.mocked(checkoutApi.get).mockResolvedValue(checkoutFixture());
+    show();
+
+    await screen.findByRole('heading', { name: 'Confirming your payment…' });
+    expect(checkoutApi.refresh).toHaveBeenCalledTimes(1);
+    expect(checkoutApi.refresh).toHaveBeenCalledWith(1);
+  });
+
+  it('keeps confirming a cancelled checkout while Maya may still take payment', async () => {
+    vi.mocked(checkoutApi.get).mockResolvedValue(
+      checkoutFixture({ status: 'CANCELLED', awaiting_payment: true }),
+    );
+    show();
+
+    expect(
+      await screen.findByRole('heading', { name: 'Confirming your payment…' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('Your hold has ended. If you paid on Maya, this page updates by itself.'),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Check again' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Book again' })).toBeNull();
+    expect(screen.getByText('Pending')).toBeInTheDocument();
+  });
+
   it('asks the server again on Check again', async () => {
     vi.mocked(checkoutApi.get).mockResolvedValue(checkoutFixture());
-    vi.mocked(checkoutApi.refresh).mockResolvedValue(checkoutFixture({ status: 'SUCCESSFUL' }));
     show();
+    await screen.findByRole('heading', { name: 'Confirming your payment…' });
+    vi.mocked(checkoutApi.refresh).mockResolvedValue(checkoutFixture({ status: 'SUCCESSFUL' }));
     await userEvent.click(await screen.findByRole('button', { name: 'Check again' }));
 
     expect(await screen.findByRole('heading', { name: 'Payment successful' })).toBeInTheDocument();
     expect(checkoutApi.refresh).toHaveBeenCalledWith(1);
+  });
+
+  it('polls while Maya may still take payment', async () => {
+    vi.useFakeTimers({ now: Date.parse('2026-10-28T02:00:00Z') });
+    vi.mocked(checkoutApi.get).mockResolvedValue(
+      checkoutFixture({ status: 'CANCELLED', awaiting_payment: true }),
+    );
+    show();
+    await vi.advanceTimersByTimeAsync(0);
+    const before = vi.mocked(checkoutApi.get).mock.calls.length;
+
+    await vi.advanceTimersByTimeAsync(3_000);
+
+    expect(vi.mocked(checkoutApi.get).mock.calls.length).toBeGreaterThan(before);
   });
 
   it('polls every 3 seconds while pending, and stops after 2 minutes', async () => {
@@ -85,15 +130,15 @@ describe('ResultView', () => {
     vi.mocked(checkoutApi.get).mockResolvedValue(checkoutFixture());
     show();
     await vi.advanceTimersByTimeAsync(0);
-    expect(checkoutApi.get).toHaveBeenCalledTimes(1);
+    const settled = vi.mocked(checkoutApi.get).mock.calls.length;
 
     await vi.advanceTimersByTimeAsync(3_000);
-    expect(checkoutApi.get).toHaveBeenCalledTimes(2);
+    expect(checkoutApi.get).toHaveBeenCalledTimes(settled + 1);
 
     await vi.advanceTimersByTimeAsync(120_000);
     const calls = vi.mocked(checkoutApi.get).mock.calls.length;
     await vi.advanceTimersByTimeAsync(9_000);
     expect(checkoutApi.get).toHaveBeenCalledTimes(calls);
-    expect(calls).toBeLessThanOrEqual(42);
+    expect(calls - settled).toBeLessThanOrEqual(41);
   });
 });

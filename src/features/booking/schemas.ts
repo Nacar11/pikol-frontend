@@ -36,6 +36,8 @@ export const CheckoutSchema = z.object({
   total_centavos: z.number(),
   checkout_url: z.string().nullable(),
   refund_kind: z.enum(['VOID', 'REFUND']).nullable(),
+  /** Maya may still take money — an attempt is open. Keep confirming. */
+  awaiting_payment: z.boolean(),
   bookings: z.array(CheckoutBookingSchema),
   created_at: z.string(),
 });

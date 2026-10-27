@@ -1,16 +1,23 @@
 'use client';
 
 import Link from 'next/link';
+import { useEffect, useRef } from 'react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { notify } from '@/components/ui/snackbar';
 import { errorMessage } from '@/lib/api-error';
-import { useCheckout, useRefreshPayment } from '../hooks/use-checkouts';
+import { confirming, useCheckout, useRefreshPayment } from '../hooks/use-checkouts';
 import type { Checkout } from '../schemas';
 import { CheckoutLines } from './checkout-lines';
 import { StatusPill } from './status-pill';
 
 function copy(c: Checkout): { heading: string; line: string } {
+  if (c.status !== 'PENDING' && confirming(c)) {
+    return {
+      heading: 'Confirming your payment…',
+      line: 'Your hold has ended. If you paid on Maya, this page updates by itself.',
+    };
+  }
   switch (c.status) {
     case 'PENDING':
       return { heading: 'Confirming your payment…', line: 'This page updates by itself.' };
@@ -39,19 +46,31 @@ export function ResultView({ id }: { id: number }) {
   const checkout = useCheckout(id, { poll: true });
   const refresh = useRefreshPayment();
 
+  // Ask Maya once on arrival: if every webhook was missed, this is the only
+  // thing that confirms — or refunds — the payment (ADR 0002).
+  const { mutate } = refresh;
+  const asked = useRef(false);
+  useEffect(() => {
+    if (asked.current) return;
+    asked.current = true;
+    mutate(id);
+  }, [id, mutate]);
+
   if (checkout.isPending) return <Skeleton className="h-96 w-full" />;
   if (checkout.isError)
     return <p className="text-sm text-destructive">Could not load this booking.</p>;
   const c = checkout.data;
   const { heading, line } = copy(c);
-  const released = c.status === 'FAILED' || c.status === 'CANCELLED' || c.status === 'REFUNDED';
+  const waiting = confirming(c);
+  const released =
+    !waiting && (c.status === 'FAILED' || c.status === 'CANCELLED' || c.status === 'REFUNDED');
 
   return (
     <section className="mx-auto max-w-lg space-y-6">
       <div className="space-y-2">
         <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-widest text-muted-foreground">
           <span>{c.venue_name}</span>
-          <StatusPill status={c.status} />
+          <StatusPill status={waiting ? 'PENDING' : c.status} />
         </div>
         <h1 className="text-3xl font-semibold tracking-tight">{heading}</h1>
         <p className="text-sm text-muted-foreground">{line}</p>
@@ -67,7 +86,7 @@ export function ResultView({ id }: { id: number }) {
         <CheckoutLines checkout={c} />
       </div>
       <div className="flex flex-col gap-2">
-        {c.status === 'PENDING' && (
+        {waiting && (
           <Button
             variant="secondary"
             size="full"

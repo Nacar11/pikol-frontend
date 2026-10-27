@@ -13,6 +13,12 @@ import type { Checkout, CheckoutItem } from '../schemas';
 const POLL_MS = 3_000;
 const POLL_FOR_MS = 120_000;
 
+/** Still waiting on Maya: the hold is live, or it ended (or was cancelled)
+ * while a Maya session that can still be paid is open. */
+export function confirming(checkout: Checkout | undefined): boolean {
+  return checkout?.status === 'PENDING' || checkout?.awaiting_payment === true;
+}
+
 export function useCheckout(id: number, { poll = false }: { poll?: boolean } = {}) {
   const { status } = useAuth();
   const [since] = useState(() => Date.now());
@@ -21,9 +27,7 @@ export function useCheckout(id: number, { poll = false }: { poll?: boolean } = {
     queryFn: () => checkoutApi.get(id),
     enabled: status === 'authenticated',
     refetchInterval: (query) =>
-      poll && query.state.data?.status === 'PENDING' && Date.now() - since < POLL_FOR_MS
-        ? POLL_MS
-        : false,
+      poll && confirming(query.state.data) && Date.now() - since < POLL_FOR_MS ? POLL_MS : false,
   });
 }
 
