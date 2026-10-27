@@ -9,7 +9,7 @@ import {
   toItems,
   togglePick,
   type Pick,
-} from '@/features/booking';
+} from '@/features/booking/picks';
 
 const H = 3_600_000;
 // 2026-10-29 00:00 Manila.

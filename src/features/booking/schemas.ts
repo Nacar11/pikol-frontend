@@ -12,7 +12,7 @@ export const CheckoutStatusSchema = z.enum([
 ]);
 export type CheckoutStatus = z.infer<typeof CheckoutStatusSchema>;
 
-export const CheckoutBookingSchema = z.object({
+const CheckoutBookingSchema = z.object({
   id: z.number(),
   reference_code: z.string(),
   court_id: z.number(),
@@ -23,7 +23,6 @@ export const CheckoutBookingSchema = z.object({
   price_centavos: z.number(),
   booking_status: z.enum(['PENDING', 'CONFIRMED', 'COMPLETED', 'NO_SHOW', 'CANCELLED', 'EXPIRED']),
 });
-export type CheckoutBooking = z.infer<typeof CheckoutBookingSchema>;
 
 export const CheckoutSchema = z.object({
   id: z.number(),

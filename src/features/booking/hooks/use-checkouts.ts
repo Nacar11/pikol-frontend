@@ -10,8 +10,8 @@ import type { Checkout, CheckoutItem } from '../schemas';
 
 /** Result page polling: every 3 s while pending, for up to 2 minutes, then
  * the customer is offered "Check again" (design call 9). */
-export const POLL_MS = 3_000;
-export const POLL_FOR_MS = 120_000;
+const POLL_MS = 3_000;
+const POLL_FOR_MS = 120_000;
 
 export function useCheckout(id: number, { poll = false }: { poll?: boolean } = {}) {
   const { status } = useAuth();

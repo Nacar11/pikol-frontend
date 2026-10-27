@@ -10,7 +10,8 @@ export type Pick = {
   price_centavos: number;
 };
 
-/** The server's caps: 24 hours per payment, 12 per run of one court. */
+/** The server's caps: 24 hours per payment, 12 per run of one court.
+ * @internal Exported for tests. */
 export const MAX_CHECKOUT_HOURS = 24;
 const MAX_RUN = 12;
 const HOUR = 3_600_000;
@@ -44,7 +45,8 @@ export function toItems(picks: Pick[]): CheckoutItem[] {
 }
 
 /** round_half_up(subtotal × percent / 100) in whole centavos — the server's
- * own rule, in integer arithmetic on the percent's digits. */
+ * own rule, in integer arithmetic on the percent's digits.
+ * @internal Exported for tests. */
 export function feeCentavos(subtotal: number, percent: string): number {
   const [whole = '0', frac = ''] = percent.split('.');
   const scale = 10 ** frac.length;
