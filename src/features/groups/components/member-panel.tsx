@@ -74,11 +74,13 @@ export function MemberPanel({ group, readOnly }: { group: Group; readOnly: boole
       ) : isPending ? (
         <PageLoading label="Loading members" />
       ) : data.data.length === 0 ? (
-        <p className="py-4 text-sm text-muted-foreground">Nobody is in this group yet.</p>
+        <p className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+          Nobody is in this group yet.
+        </p>
       ) : (
         <ul
           aria-label={`Members of ${group.name}`}
-          className="divide-y divide-border rounded-md border border-border"
+          className="divide-y divide-border rounded-lg border border-border"
         >
           {data.data.map((m) => (
             <MemberRow key={m.user_id} group={group} member={m} readOnly={readOnly} />
@@ -106,18 +108,28 @@ function MemberRow({
     <li className="flex flex-wrap items-center gap-3 px-4 py-3">
       <span
         aria-hidden
-        className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold"
+        className="inline-flex size-10 shrink-0 items-center justify-center rounded border border-border text-xs font-semibold"
       >
         {initials}
       </span>
       <span className="min-w-0 flex-1">
         <span className="block truncate text-sm font-medium">{name}</span>
-        <span className="block truncate text-xs text-muted-foreground">
-          {member.email}
-          {member.is_customer && ' · also a customer'}
-          {member.pending_invite && ' · invite pending'}
-        </span>
+        <span className="block truncate text-sm text-muted-foreground">{member.email}</span>
       </span>
+      {(member.is_customer || member.pending_invite) && (
+        <span className="flex flex-wrap gap-1.5">
+          {member.pending_invite && (
+            <span className="rounded border border-input px-2 py-0.5 text-xs font-medium">
+              Invite pending
+            </span>
+          )}
+          {member.is_customer && (
+            <span className="rounded bg-muted px-2 py-0.5 text-xs font-medium">
+              Also a customer
+            </span>
+          )}
+        </span>
+      )}
       {!readOnly &&
         (confirming ? (
           <span className="flex items-center gap-2">

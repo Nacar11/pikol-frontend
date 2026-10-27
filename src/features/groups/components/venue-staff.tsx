@@ -2,6 +2,7 @@
 
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
+import { PageHeader } from '@/components/layout/page-header';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,26 +27,36 @@ function VenueStaffScreen() {
   const { venueId, venue } = useStaffVenue();
   const groups = useGroups({ venue_id: venueId ?? undefined }, venueId !== null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [creating, setCreating] = useState(false);
   const list = groups.data?.data ?? [];
   const onlyDefaults = list.filter((g) => g.kind === 'STAFF').length <= 1;
 
   return (
-    <section className="space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-            Setup / Venue staff{venue ? ` / ${venue.name}` : ''}
-          </p>
-          <h1 className="mt-1 text-3xl font-bold tracking-tight">Venue staff</h1>
-        </div>
-        {venueId !== null && <NewGroup venueId={venueId} onCreated={setSelectedId} />}
-      </header>
+    <section className="space-y-8">
+      <PageHeader
+        section="Setup"
+        title="Venue staff"
+        description={
+          groups.data && venue
+            ? `${list.length} ${list.length === 1 ? 'group' : 'groups'} at ${venue.name} · A group decides what its members can do here`
+            : 'A group decides what its members can do here'
+        }
+        action={
+          venueId !== null &&
+          !creating && (
+            <Button onClick={() => setCreating(true)}>
+              <Plus aria-hidden className="size-4" />
+              New group
+            </Button>
+          )
+        }
+      />
       {groups.error && !groups.data ? (
         <Alert tone="error">{errorMessage(groups.error)}</Alert>
-      ) : !groups.data ? (
+      ) : !groups.data || venueId === null ? (
         <div
           aria-hidden
-          className="h-72 animate-pulse rounded-md bg-muted motion-reduce:animate-none"
+          className="h-72 animate-pulse rounded-lg bg-muted motion-reduce:animate-none"
         />
       ) : (
         <GroupWorkspace
@@ -56,12 +67,20 @@ function VenueStaffScreen() {
           readOnlyFor={(g) => g.kind === 'MASTER' || g.read_only}
           tagFor={(g) => (g.kind === 'MASTER' ? 'Managed by the owner' : null)}
           empty={
-            onlyDefaults ? (
-              <p className="text-sm text-muted-foreground">
-                Groups decide what your staff can do here. Make one per role — “Weekend crew”,
-                “Cashier” — tick its permissions, then add people by email.
-              </p>
-            ) : null
+            <>
+              <NewGroupTile
+                venueId={venueId}
+                open={creating}
+                onOpen={setCreating}
+                onCreated={setSelectedId}
+              />
+              {onlyDefaults && (
+                <p className="text-sm text-muted-foreground">
+                  Make one group per role — “Weekend crew”, “Cashier” — tick its permissions, then
+                  add people by email.
+                </p>
+              )}
+            </>
           }
         />
       )}
@@ -69,10 +88,20 @@ function VenueStaffScreen() {
   );
 }
 
-function NewGroup({ venueId, onCreated }: { venueId: number; onCreated: (id: number) => void }) {
+/** The dashed "add" tile under the list, as on Courts and Venues. */
+function NewGroupTile({
+  venueId,
+  open,
+  onOpen,
+  onCreated,
+}: {
+  venueId: number;
+  open: boolean;
+  onOpen: (open: boolean) => void;
+  onCreated: (id: number) => void;
+}) {
   const { data: permissions } = usePermissions();
   const { create } = useGroupMutations();
-  const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
   const [error, setError] = useState<unknown>(null);
   // Only the owner names the venue; for anyone else the server takes the
@@ -81,15 +110,29 @@ function NewGroup({ venueId, onCreated }: { venueId: number; onCreated: (id: num
 
   if (!open) {
     return (
-      <Button onClick={() => setOpen(true)}>
-        <Plus aria-hidden className="size-4" />
-        New group
-      </Button>
+      <button
+        type="button"
+        onClick={() => onOpen(true)}
+        className="flex w-full items-center gap-3 rounded-lg border border-dashed border-input p-4 text-left transition-colors duration-150 hover:bg-muted/60"
+      >
+        <span
+          aria-hidden
+          className="inline-flex size-9 shrink-0 items-center justify-center rounded border border-foreground"
+        >
+          <Plus className="size-4" />
+        </span>
+        <span className="min-w-0">
+          <span className="block text-sm font-semibold">New group</span>
+          <span className="block text-xs text-muted-foreground">
+            One per role, with its own permissions
+          </span>
+        </span>
+      </button>
     );
   }
   return (
     <form
-      className="flex w-full flex-wrap items-start gap-2 sm:w-auto"
+      className="space-y-3 rounded-lg border border-dashed border-input p-4"
       onSubmit={(e) => {
         e.preventDefault();
         setError(null);
@@ -97,7 +140,7 @@ function NewGroup({ venueId, onCreated }: { venueId: number; onCreated: (id: num
           { name: name.trim(), ...(isOwner ? { venue_id: venueId } : {}) },
           {
             onSuccess: (g) => {
-              setOpen(false);
+              onOpen(false);
               setName('');
               onCreated(g.id);
             },
@@ -105,30 +148,28 @@ function NewGroup({ venueId, onCreated }: { venueId: number; onCreated: (id: num
           },
         );
       }}
+      onKeyDown={(e) => e.key === 'Escape' && onOpen(false)}
     >
-      <label htmlFor="new-group" className="sr-only">
+      <label htmlFor="new-group" className="text-sm font-medium">
         New group name
       </label>
       <Input
         id="new-group"
         autoFocus
         maxLength={64}
-        placeholder="Group name, e.g. Weekend crew"
+        placeholder="e.g. Weekend crew"
         value={name}
         onChange={(e) => setName(e.target.value)}
-        className="sm:w-64"
       />
-      <Button type="submit" loading={create.isPending} disabled={!name.trim()}>
-        Create
-      </Button>
-      <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
-        Cancel
-      </Button>
-      {error ? (
-        <div className="w-full">
-          <Alert tone="error">{errorMessage(error)}</Alert>
-        </div>
-      ) : null}
+      <div className="flex gap-2">
+        <Button type="submit" loading={create.isPending} disabled={!name.trim()}>
+          Create
+        </Button>
+        <Button type="button" variant="ghost" onClick={() => onOpen(false)}>
+          Cancel
+        </Button>
+      </div>
+      {error ? <Alert tone="error">{errorMessage(error)}</Alert> : null}
     </form>
   );
 }

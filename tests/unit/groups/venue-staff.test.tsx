@@ -231,10 +231,21 @@ describe('Venue staff', () => {
     await userEvent.click(within(list).getByRole('option', { name: /Front desk/ }));
     await userEvent.click(await screen.findByRole('tab', { name: /Members/ }));
 
-    expect(await screen.findByText(/also a customer/)).toBeInTheDocument();
+    expect(await screen.findByText(/also a customer/i)).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Remove Kim Tan' }));
     await userEvent.click(screen.getByRole('button', { name: 'Remove' }));
     expect(http.delete).toHaveBeenCalledWith('/admin/user-groups/11/members/5');
+  });
+
+  it('sums up the chosen group: members, permissions held and its type', async () => {
+    const list = await open();
+    await userEvent.click(within(list).getByRole('option', { name: /Front desk/ }));
+    const detail = await screen.findByRole('region', { name: 'Front desk' });
+    const stats = within(detail)
+      .getAllByRole('definition')
+      .map((d) => d.textContent);
+    // Front desk holds 1 of the 9 codes a group may hold; owner-only ones are not counted.
+    expect(stats).toEqual(['2', '1 of 9', 'Staff']);
   });
 
   it('switches tabs with the arrow keys', async () => {

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/cn';
 import { errorMessage } from '@/lib/api-error';
 import { useGroupMutations } from '../hooks/use-groups';
 import { checkboxState, PERMISSION_SECTIONS, sameSet } from '../permission-rules';
@@ -78,42 +79,64 @@ export function PermissionChecklist({
           The owner manages this group. You can see it, not change it.
         </p>
       )}
-      <div className="grid gap-4 md:grid-cols-2">
-        {PERMISSION_SECTIONS.map((section) => (
-          <fieldset
-            key={section.title}
-            className={`rounded-md border border-border p-4 ${section.title === 'Owner only' ? 'md:col-span-2' : ''}`}
-          >
-            <legend className="px-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-              {section.title}
-            </legend>
-            <ul className="space-y-1">
-              {section.codes.map(({ code, label }) => {
-                const state = checkboxState(code, ctx);
-                const id = `perm-${group.id}-${code}`;
-                return (
-                  <li key={code}>
-                    <label
-                      htmlFor={id}
-                      className={`flex min-h-10 items-center gap-3 rounded px-1 text-sm ${state.disabled ? 'text-muted-foreground' : 'cursor-pointer hover:bg-muted'}`}
-                    >
-                      <input
-                        id={id}
-                        type="checkbox"
-                        checked={state.checked}
-                        disabled={state.disabled}
-                        onChange={() => toggle(code)}
-                        className="size-4 accent-primary"
-                      />
-                      <span className="flex-1">{label}</span>
-                      {state.reason && <span className="text-xs">{state.reason}</span>}
-                    </label>
-                  </li>
-                );
-              })}
-            </ul>
-          </fieldset>
-        ))}
+      <div className="space-y-6">
+        {PERMISSION_SECTIONS.map((section, n) => {
+          const on = section.codes.filter(({ code }) => checkboxState(code, ctx).checked).length;
+          return (
+            <fieldset key={section.title} className="space-y-3">
+              <legend className="sr-only">{section.title}</legend>
+              <div aria-hidden className="flex items-baseline justify-between gap-2">
+                <span className="flex items-baseline gap-2">
+                  <span className="text-sm font-semibold tabular-nums">
+                    {String(n + 1).padStart(2, '0')}
+                  </span>
+                  <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                    {section.title}
+                  </span>
+                </span>
+                <span className="text-xs tabular-nums text-muted-foreground">
+                  {on} of {section.codes.length}
+                </span>
+              </div>
+              <ul className="grid gap-2 sm:grid-cols-2">
+                {section.codes.map(({ code, label }) => {
+                  const state = checkboxState(code, ctx);
+                  const id = `perm-${group.id}-${code}`;
+                  return (
+                    <li key={code}>
+                      <label
+                        htmlFor={id}
+                        className={cn(
+                          'flex min-h-12 items-center gap-3 rounded border px-3 py-2 text-sm transition-colors duration-150',
+                          'focus-within:ring-2 focus-within:ring-ring',
+                          state.checked ? 'border-foreground bg-muted' : 'border-border',
+                          state.disabled
+                            ? 'cursor-not-allowed text-muted-foreground'
+                            : 'cursor-pointer hover:border-input hover:bg-muted/60',
+                          state.checked && !state.disabled && 'font-medium',
+                        )}
+                      >
+                        <input
+                          id={id}
+                          type="checkbox"
+                          checked={state.checked}
+                          disabled={state.disabled}
+                          onChange={() => toggle(code)}
+                          className="size-4 shrink-0 accent-foreground focus-visible:ring-0"
+                        />
+                        <span className="flex-1">{label}</span>
+                        {/* A read-only group says why once, above — not on every tile. */}
+                        {state.reason && !(readOnly && !ownerOnly.has(code)) && (
+                          <span className="shrink-0 text-right text-xs">{state.reason}</span>
+                        )}
+                      </label>
+                    </li>
+                  );
+                })}
+              </ul>
+            </fieldset>
+          );
+        })}
       </div>
       {error ? <Alert tone="error">{errorMessage(error)}</Alert> : null}
       {!readOnly && (

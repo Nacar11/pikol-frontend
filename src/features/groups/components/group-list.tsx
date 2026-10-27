@@ -38,7 +38,7 @@ export function GroupList({
     <ul
       role="listbox"
       aria-label={label}
-      className="divide-y divide-border overflow-hidden rounded-md border border-border bg-surface"
+      className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface"
     >
       {groups.map((g, i) => {
         const selected = g.id === selectedId;
@@ -55,12 +55,21 @@ export function GroupList({
             onClick={() => onSelect(g.id)}
             onKeyDown={(e) => onKeyDown(e, i, g.id)}
             className={cn(
-              'flex min-h-14 cursor-pointer items-center justify-between gap-3 px-4 py-3 transition-colors duration-150',
+              'flex min-h-16 cursor-pointer items-center justify-between gap-3 px-4 py-3 transition-colors duration-150',
               selected ? 'bg-primary text-primary-foreground' : 'hover:bg-muted',
             )}
           >
+            <span
+              aria-hidden
+              className={cn(
+                'w-6 shrink-0 text-xs font-semibold tabular-nums',
+                selected ? 'text-primary-foreground/70' : 'text-muted-foreground',
+              )}
+            >
+              {String(i + 1).padStart(2, '0')}
+            </span>
             <span className="min-w-0 flex-1">
-              <span className="block text-sm font-semibold">{titleFor(g)}</span>
+              <span className="block truncate text-sm font-semibold">{titleFor(g)}</span>
               <span
                 className={cn(
                   'block text-xs tabular-nums',

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { PageHeader } from '@/components/layout/page-header';
 import { Alert } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 import { StaffGate, useStaffVenue } from '@/features/staff';
@@ -38,17 +39,12 @@ function UserGroupsScreen() {
   const error = customers.error ?? masters.error;
 
   return (
-    <section className="space-y-6">
-      <header>
-        <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-          Masters / User groups
-        </p>
-        <h1 className="mt-1 text-3xl font-bold tracking-tight">User groups</h1>
-        <p className="mt-1 max-w-prose text-sm text-muted-foreground">
-          Who can book as a customer, and who runs each venue. Each venue’s masters manage their own
-          staff from Venue staff.
-        </p>
-      </header>
+    <section className="space-y-8">
+      <PageHeader
+        section="Masters"
+        title="User groups"
+        description="Who can book as a customer, and who runs each venue. Each venue’s masters manage their own staff from Venue staff."
+      />
       {error && !customers.data ? (
         <Alert tone="error">{errorMessage(error)}</Alert>
       ) : !customers.data || !masters.data ? (

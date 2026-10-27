@@ -15,6 +15,12 @@ import { PermissionChecklist } from './permission-checklist';
 
 type Tab = 'permissions' | 'members';
 
+const KIND_LABEL: Record<Group['kind'], string> = {
+  CUSTOMER: 'Customers',
+  MASTER: 'Venue master',
+  STAFF: 'Staff',
+};
+
 /** Why the delete button is off, or null when it may be pressed. */
 function deleteBlocked(group: Group, readOnly: boolean): string | null {
   if (group.kind !== 'STAFF') return 'Built-in groups cannot be deleted.';
@@ -47,6 +53,17 @@ export function GroupDetail({
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const blocked = deleteBlocked(group, readOnly);
   const active = tabs.includes(tab) ? tab : tabs[0]!;
+  const grantable = catalogue.filter((p) => !p.owner_only).length;
+  const stats: { label: string; value: string }[] = [
+    { label: 'Members', value: String(group.member_count) },
+    ...(group.kind === 'CUSTOMER'
+      ? []
+      : [{ label: 'Permissions', value: `${group.permissions.length} of ${grantable}` }]),
+    {
+      label: 'Type',
+      value: readOnly ? `${KIND_LABEL[group.kind]} · read-only` : KIND_LABEL[group.kind],
+    },
+  ];
 
   function onTabKey(e: React.KeyboardEvent, i: number) {
     const move = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
@@ -60,17 +77,38 @@ export function GroupDetail({
   return (
     <section
       aria-label={title ?? group.name}
-      className="space-y-5 rounded-md border border-border bg-surface p-5"
+      className="rounded-lg border border-border bg-surface"
     >
-      <Heading
-        group={group}
-        title={title}
-        readOnly={readOnly}
-        blocked={blocked}
-        onDeleted={onDeleted}
-      />
+      <div className="p-5">
+        <Heading
+          group={group}
+          title={title}
+          readOnly={readOnly}
+          blocked={blocked}
+          onDeleted={onDeleted}
+        />
+      </div>
 
-      <div role="tablist" aria-label="Group" className="flex gap-6 border-b border-border">
+      <dl
+        className={cn(
+          'grid border-y border-border',
+          stats.length === 3 ? 'grid-cols-3' : 'grid-cols-2',
+        )}
+      >
+        {stats.map((s, i) => (
+          <div
+            key={s.label}
+            className={cn('min-w-0 space-y-1 p-3 sm:p-4', i > 0 && 'border-l border-border')}
+          >
+            <dt className="truncate text-xs font-medium uppercase tracking-widest text-muted-foreground">
+              {s.label}
+            </dt>
+            <dd className="text-base font-semibold tabular-nums sm:text-lg">{s.value}</dd>
+          </div>
+        ))}
+      </dl>
+
+      <div role="tablist" aria-label="Group" className="flex gap-6 border-b border-border px-5">
         {tabs.map((t, i) => {
           const selected = t === active;
           const label =
@@ -104,6 +142,7 @@ export function GroupDetail({
       </div>
 
       <div
+        className="p-5"
         role="tabpanel"
         id={`panel-${group.id}-${active}`}
         aria-labelledby={`tab-${group.id}-${active}`}
@@ -196,7 +235,7 @@ function Heading({
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <h2 className="text-xl font-semibold">{title ?? group.name}</h2>
+        <h2 className="text-2xl font-semibold tracking-tight">{title ?? group.name}</h2>
         <div className="flex gap-2">
           {renamable && (
             <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>
