@@ -110,3 +110,51 @@ export function priceLabel(court: GridCourt): string {
   const same = prices.every((p) => p === low);
   return `${same ? '' : 'from '}${formatPeso(low)} / hr`;
 }
+
+export type DayKpis = {
+  bookedHours: number;
+  bookableHours: number;
+  /** 0–100, rounded. */
+  utilisation: number;
+  sessions: number;
+  /** Frozen totals of the day's live sessions, paid or not. */
+  revenueCentavos: number;
+  awaitingCentavos: number;
+  awaitingCount: number;
+};
+
+/** The panel's four tiles. Closures are not sessions: they shrink what is
+ * bookable and earn nothing. A lapsed hold counts for nothing — blocksFor
+ * has already dropped it (the PENDING trap). */
+export function dayKpis(grid: Availability, blocks: Block[]): DayKpis {
+  let bookedHours = 0;
+  let closedHours = 0;
+  let revenueCentavos = 0;
+  let awaitingCentavos = 0;
+  let awaitingCount = 0;
+  const sessions = new Set<number>();
+  for (const b of blocks) {
+    if (b.kind === 'CLOSED') {
+      closedHours += b.span;
+      continue;
+    }
+    bookedHours += b.span;
+    if (sessions.has(b.booking.id)) continue;
+    sessions.add(b.booking.id);
+    revenueCentavos += b.booking.total_centavos;
+    if (b.kind === 'AWAITING_PAYMENT') {
+      awaitingCentavos += b.booking.total_centavos;
+      awaitingCount += 1;
+    }
+  }
+  const bookableHours = grid.courts.length * 24 - closedHours;
+  return {
+    bookedHours,
+    bookableHours,
+    utilisation: bookableHours > 0 ? Math.round((bookedHours / bookableHours) * 100) : 0,
+    sessions: sessions.size,
+    revenueCentavos,
+    awaitingCentavos,
+    awaitingCount,
+  };
+}

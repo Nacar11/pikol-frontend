@@ -23,7 +23,7 @@ import { adminBookingKeys } from '../keys';
 import { REFETCH_MS, useDayBookings } from '../hooks/use-day-bookings';
 import { useNow } from '../hooks/use-now';
 import { blocksFor, courtHours, nextOpen, staffSelectable } from '../schedule-model';
-import { DayBookings } from './day-bookings';
+import { DayGlance } from './day-glance';
 import { ScheduleHeader } from './schedule-header';
 import { ScheduleLegend } from './schedule-legend';
 import { StaffCourtGrid } from './staff-court-grid';
@@ -62,32 +62,42 @@ export function Schedule({
   const [newBooking, setNewBooking] = useState(0);
   useDayKeys(date, onDateChange);
   return (
-    <section className="space-y-4">
-      <ScheduleHeader
-        venueName={venue?.name ?? null}
-        date={date}
-        onDateChange={onDateChange}
-        onNewBooking={canWalkIn && venueId !== null ? () => setNewBooking((n) => n + 1) : undefined}
-      />
-      {venueId !== null ? (
-        <>
-          <WeekStrip venueId={venueId} value={date} onChange={onDateChange} />
-          {/* Keyed so a new venue or day starts with no selection and no stale notes. */}
-          <VenueDay
-            key={`${venueId}-${date}`}
-            venueId={venueId}
-            date={date}
-            newBooking={newBooking}
-          />
-        </>
-      ) : error ? (
-        <Alert tone="error">{errorMessage(error)}</Alert>
-      ) : isPending ? (
-        <PageLoading label="Loading venues" />
-      ) : venues.length === 0 ? (
-        <p className="text-sm text-muted-foreground">There are no venues yet.</p>
-      ) : null}
-    </section>
+    <div className="gap-8 xl:grid xl:grid-cols-[minmax(0,1fr)_20rem]">
+      <section className="min-w-0 space-y-4">
+        <ScheduleHeader
+          venueName={venue?.name ?? null}
+          date={date}
+          onDateChange={onDateChange}
+          onNewBooking={
+            canWalkIn && venueId !== null ? () => setNewBooking((n) => n + 1) : undefined
+          }
+        />
+        {venueId !== null ? (
+          <>
+            <WeekStrip venueId={venueId} value={date} onChange={onDateChange} />
+            {/* Keyed so a new venue or day starts with no selection and no stale notes. */}
+            <VenueDay
+              key={`${venueId}-${date}`}
+              venueId={venueId}
+              date={date}
+              newBooking={newBooking}
+            />
+          </>
+        ) : error ? (
+          <Alert tone="error">{errorMessage(error)}</Alert>
+        ) : isPending ? (
+          <PageLoading label="Loading venues" />
+        ) : venues.length === 0 ? (
+          <p className="text-sm text-muted-foreground">There are no venues yet.</p>
+        ) : null}
+      </section>
+      {/* Beside the grid on wide screens; below it otherwise. */}
+      {venueId !== null && (
+        <div className="mt-8 border-border xl:mt-0 xl:border-l xl:pl-8">
+          <DayGlance venueId={venueId} date={date} />
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -194,7 +204,6 @@ function VenueDay({
           pending={walkIn.isPending}
         />
       )}
-      <DayBookings venueId={venueId} date={date} />
     </div>
   );
 }

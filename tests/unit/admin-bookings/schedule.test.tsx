@@ -183,7 +183,7 @@ describe('Schedule walk-ins', () => {
 });
 
 describe('Schedule day list', () => {
-  it('names the player, a walk-in and a closure, and renders IN_PROGRESS', async () => {
+  it('names the player and a walk-in in the panel, and draws all three on the grid', async () => {
     vi.mocked(adminBookingsApi.day).mockResolvedValue(
       page([
         booking({
@@ -196,16 +196,16 @@ describe('Schedule day list', () => {
       ]) as never,
     );
     setup(['BOOKING:ReadAny']);
-    // The list below the grid names them in server order…
+    // The panel lists the sessions by start time (closures live on the grid)…
     const list = await screen.findByRole('list', { name: 'Bookings this day' });
     expect(within(list).getByText('Ana Cruz')).toBeInTheDocument();
     expect(within(list).getByText('Walk-in')).toBeInTheDocument();
-    expect(within(list).getByText('Closure')).toBeInTheDocument();
+    expect(within(list).queryByText('Closure')).not.toBeInTheDocument();
     expect(
       within(list)
         .getAllByRole('link')
         .map((a) => a.getAttribute('href')),
-    ).toEqual(['/staff/bookings/1', '/staff/bookings/2', '/staff/bookings/3']);
+    ).toEqual(['/staff/bookings/1', '/staff/bookings/2']);
     // …and the grid draws each as a block, its state from the clock and the
     // payment axis (the grid's own rule, tested in schedule-model).
     expect(
