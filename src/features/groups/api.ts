@@ -1,5 +1,7 @@
 import { z } from 'zod';
+import { UserSchema, type User } from '@/features/auth';
 import { ApiClient, apiClient } from '@/lib/api-client';
+import { pageSchema, type Page } from '@/lib/page';
 import {
   GroupPageSchema,
   GroupSchema,
@@ -66,6 +68,13 @@ export const groupsApi = {
 
   removeMember(id: number, userId: number, client: ApiClient = apiClient()): Promise<void> {
     return client.delete<void>(`/admin/user-groups/${id}/members/${userId}`);
+  },
+
+  /** Owner only: anyone by name or email, for the Customer group. */
+  searchUsers(q: string, client: ApiClient = apiClient()): Promise<Page<User>> {
+    return client
+      .get<unknown>('/admin/users', { params: { q, limit: 20 } })
+      .then((r) => pageSchema(UserSchema).parse(r));
   },
 
   catalogue(client: ApiClient = apiClient()): Promise<Permission[]> {

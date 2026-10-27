@@ -1,4 +1,5 @@
 export { GroupWorkspace } from './components/group-workspace';
+export { UserGroups } from './components/user-groups';
 export { VenueStaff } from './components/venue-staff';
 export { groupsApi } from './api';
 export { groupKeys } from './keys';

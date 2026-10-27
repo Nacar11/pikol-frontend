@@ -6,4 +6,5 @@ export const groupKeys = {
   list: (params: GroupListParams) => [...groupKeys.lists(), params] as const,
   members: (groupId: number) => [...groupKeys.all, 'members', groupId] as const,
   catalogue: () => [...groupKeys.all, 'catalogue'] as const,
+  userSearch: (q: string) => [...groupKeys.all, 'user-search', q] as const,
 };

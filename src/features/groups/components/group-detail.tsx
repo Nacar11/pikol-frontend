@@ -9,6 +9,7 @@ import { cn } from '@/lib/cn';
 import { errorMessage } from '@/lib/api-error';
 import { useGroupMutations } from '../hooks/use-groups';
 import type { Group, Permission } from '../schemas';
+import { CustomerSearch } from './customer-search';
 import { MemberPanel } from './member-panel';
 import { PermissionChecklist } from './permission-checklist';
 
@@ -119,7 +120,17 @@ export function GroupDetail({
             onDirtyChange={onDirtyChange}
           />
         ) : (
-          <MemberPanel group={group} readOnly={readOnly} />
+          <div className="space-y-6">
+            {group.kind === 'CUSTOMER' && (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  Customers can book and pay in the mobile app.
+                </p>
+                <CustomerSearch group={group} />
+              </>
+            )}
+            <MemberPanel group={group} readOnly={readOnly || group.kind === 'CUSTOMER'} />
+          </div>
         )}
       </div>
     </section>

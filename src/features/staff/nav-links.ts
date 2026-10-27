@@ -4,6 +4,7 @@ import {
   CircleAlert,
   LayoutGrid,
   MapPin,
+  ShieldCheck,
   SlidersHorizontal,
   UserCog,
   Users,
@@ -83,6 +84,13 @@ export const STAFF_LINKS: StaffLink[] = [
     permission: 'PARAMETER:Manage',
     section: 'setup',
     icon: SlidersHorizontal,
+  },
+  {
+    href: '/staff/groups',
+    label: 'User groups',
+    permission: 'VENUE:Manage',
+    section: 'masters',
+    icon: ShieldCheck,
   },
 ];
 

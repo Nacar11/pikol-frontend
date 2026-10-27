@@ -25,6 +25,17 @@ export function usePermissionCatalogue() {
   });
 }
 
+/** Owner only. Runs once the query is two characters or more. */
+export function useUserSearch(q: string) {
+  const { status } = useAuth();
+  const term = q.trim();
+  return useQuery({
+    queryKey: groupKeys.userSearch(term),
+    queryFn: () => groupsApi.searchUsers(term),
+    enabled: status === 'authenticated' && term.length >= 2,
+  });
+}
+
 export function useMembers(groupId: number) {
   const { status } = useAuth();
   return useQuery({
