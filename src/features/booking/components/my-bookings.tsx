@@ -27,7 +27,10 @@ export function MyBookings() {
   }
   return (
     <div className="space-y-4">
-      <ul className="divide-y divide-border rounded border border-border bg-surface">
+      <ul
+        aria-label="Your payments"
+        className="divide-y divide-border rounded border border-border bg-surface"
+      >
         {list.data.data.map((c) => (
           <Row key={c.id} checkout={c} />
         ))}

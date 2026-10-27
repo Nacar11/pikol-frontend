@@ -27,7 +27,8 @@ export default defineConfig({
         JWT_SECRET: 'e2e-only-secret-not-for-any-real-deployment',
         EMAIL_PROVIDER: 'console',
         PAYMENT_PROVIDER: 'mock',
-        MOCK_CHECKOUT_ENABLED: 'false',
+        // The customer specs pay on the mock Maya page.
+        MOCK_CHECKOUT_ENABLED: 'true',
         // Every spec signs in from one IP; the login limiter would refuse them.
         RATE_LIMIT_ENABLED: 'false',
         DEBUG: 'false',
