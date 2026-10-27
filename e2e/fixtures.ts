@@ -32,6 +32,16 @@ export const test = base.extend<{ ownerPage: Page; deskPage: Page }>({
   },
 });
 
+/** Make `name` the active venue, whichever one the console picked first. */
+export async function useVenue(page: Page, name: string) {
+  const venue = page.getByRole('combobox', { name: 'Venue' });
+  await expect(venue).toBeVisible();
+  if ((await venue.textContent())?.includes(name)) return;
+  await venue.click();
+  await page.getByRole('option', { name }).click();
+  await expect(venue).toContainText(name);
+}
+
 /** A short suffix that keeps names unique across runs on the same database. */
 export const uid = () => Math.random().toString(36).slice(2, 7);
 
