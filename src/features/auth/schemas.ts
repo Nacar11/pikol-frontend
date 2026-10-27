@@ -56,21 +56,6 @@ export const LoginInputSchema = z.object({
 });
 export type LoginInput = z.infer<typeof LoginInputSchema>;
 
-export const RegisterInputSchema = z
-  .object({
-    first_name: z.string().trim().min(1, 'Enter your first name.').max(100),
-    last_name: z.string().trim().min(1, 'Enter your last name.').max(100),
-    email,
-    mobile: z.string().trim().max(32).optional(),
-    password: newPassword,
-    confirm_password: z.string(),
-  })
-  .refine((v) => v.password === v.confirm_password, {
-    message: 'Passwords do not match.',
-    path: ['confirm_password'],
-  });
-export type RegisterInput = z.infer<typeof RegisterInputSchema>;
-
 export const EmailInputSchema = z.object({ email });
 export type EmailInput = z.infer<typeof EmailInputSchema>;
 

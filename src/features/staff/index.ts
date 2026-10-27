@@ -1,4 +1,5 @@
 export { StaffGate } from './components/staff-gate';
+export { StaffOnly } from './components/staff-only';
 export { StaffShell } from './components/staff-shell';
 export { StaffVenueSync } from './components/venue-sync';
 export { VenueSwitcher } from './components/venue-switcher';

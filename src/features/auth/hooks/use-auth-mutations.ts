@@ -3,12 +3,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { authApi } from '../api';
 import { authKeys } from '../keys';
-import type { RegisterInput } from '../schemas';
 
 // Every auth write, as named hooks: components never call api.ts directly.
-
-export const useRegister = () =>
-  useMutation({ mutationFn: (input: RegisterInput) => authApi.register(input) });
 
 export const useResendVerification = () =>
   useMutation({ mutationFn: (email: string) => authApi.resendVerification(email) });

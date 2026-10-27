@@ -1,8 +1,6 @@
-export { BookVenueDay } from './components/book-venue-day';
-export { bookingKeys } from './keys';
+// What the staff console still uses from the player booking slice: the
+// booking shape and its status badge. The player screens moved to the
+// mobile app (ADR 0003).
 export type { Booking, DisplayStatus } from './schemas';
-export { BookingDetail, BookingNotFound } from './components/booking-detail';
-export { CheckoutNotFound, CheckoutReturn } from './components/checkout-return';
-export { MyBookings } from './components/my-bookings';
 export { BookingSchema } from './schemas';
 export { StatusBadge } from './components/status-badge';

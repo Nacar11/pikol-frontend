@@ -1,7 +1,7 @@
 export { AuthProvider, REFRESH_STORAGE_KEY, type AuthStatus } from './auth-provider';
 export { AuthGate } from './components/auth-gate';
 export { GuestGate } from './components/guest-gate';
-export { canBookOnline, landingPath, type LandingPath } from './landing';
+export { landingPath, type LandingPath } from './landing';
 export { GroupRefSchema, UserSchema } from './schemas';
 export type { AuthUser, GroupKind, GroupRef, User } from './schemas';
 export { useAuth } from './use-auth';
@@ -9,8 +9,6 @@ export { usePermissions } from './use-permissions';
 export { AcceptInviteForm } from './components/accept-invite-form';
 export { ForgotPasswordForm } from './components/forgot-password-form';
 export { LoginForm } from './components/login-form';
-export { RegisterForm } from './components/register-form';
 export { ResetPasswordForm } from './components/reset-password-form';
 export { VerifyEmail } from './components/verify-email';
 export { RequirePermission } from './components/require-permission';
-export { UserMenu } from './components/user-menu';

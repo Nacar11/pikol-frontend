@@ -76,12 +76,6 @@ export function LoginForm() {
       <Button type="submit" size="full" loading={isSubmitting}>
         Sign in
       </Button>
-      <p className="text-center text-sm text-muted-foreground">
-        New to Pikol?{' '}
-        <Link href="/register" className="font-medium text-primary hover:underline">
-          Create an account
-        </Link>
-      </p>
     </form>
   );
 }

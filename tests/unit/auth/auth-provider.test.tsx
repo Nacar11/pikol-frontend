@@ -1,11 +1,8 @@
-import { QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthProvider, REFRESH_STORAGE_KEY, useAuth } from '@/features/auth';
 import { authApi } from '@/features/auth/api';
-import { MyBookings } from '@/features/bookings';
-import { bookingsApi } from '@/features/bookings/api';
-import type { Booking } from '@/features/bookings/schemas';
 import { createQueryClient } from '@/lib/query-client';
 
 vi.mock('@/features/auth/api', () => ({
@@ -18,11 +15,11 @@ vi.mock('@/features/auth/api', () => ({
   },
 }));
 
-vi.mock('@/features/bookings/api', () => ({ bookingsApi: { mine: vi.fn() } }));
 vi.mock('next/navigation', async () => (await import('./render')).navigationMock);
 
 const api = vi.mocked(authApi);
-const mine = vi.mocked(bookingsApi).mine;
+/** Stands in for any per-user read: what the signed-in person last saw. */
+const mine = vi.fn<() => Promise<string>>();
 
 const USER = {
   id: 1,
@@ -54,38 +51,15 @@ function Probe() {
   );
 }
 
-function booking(id: number, reference_code: string): Booking {
-  return {
-    id,
-    reference_code,
-    court_id: 7,
-    venue_id: 3,
-    court_name: 'Court 2',
-    venue_name: 'Riverside',
-    type: 'PLAYER_BOOKING',
-    booking_status: 'CONFIRMED',
-    payment_status: 'PAID',
-    display_status: 'CONFIRMED',
-    starts_at: '2026-10-23T10:00:00Z',
-    ends_at: '2026-10-23T11:00:00Z',
-    hours: 1,
-    slots: [],
-    price_centavos: 60000,
-    fee_centavos: 1000,
-    total_centavos: 61000,
-    payment_method: 'ONLINE',
-    expires_at: null,
-    cancelled_at: null,
-    cancellation_reason: null,
-    notes: null,
-    created_at: '2026-10-22T10:00:00Z',
-  };
+/** A per-user read, mounted only while someone is signed in. */
+function SignedInData() {
+  const { status } = useAuth();
+  return status === 'authenticated' ? <Data /> : null;
 }
 
-/** My bookings, mounted only while someone is signed in. */
-function SignedInBookings() {
-  const { status } = useAuth();
-  return status === 'authenticated' ? <MyBookings /> : null;
+function Data() {
+  const { data } = useQuery({ queryKey: ['mine'], queryFn: () => mine() });
+  return data ? <p>{data}</p> : null;
 }
 
 function renderProvider() {
@@ -146,29 +120,15 @@ describe('AuthProvider', () => {
     expect(api.logout).toHaveBeenCalled();
   });
 
-  it("forgets the previous player's bookings on sign-out", async () => {
+  it("forgets the previous person's data on sign-out", async () => {
     api.login.mockResolvedValue(PAIR);
     api.me.mockResolvedValueOnce(USER).mockResolvedValueOnce({ ...USER, id: 2, first_name: 'Bob' });
-    mine
-      .mockResolvedValueOnce({
-        data: [booking(1, 'PK-JANE')],
-        total: 1,
-        page: 1,
-        limit: 20,
-        has_more: false,
-      })
-      .mockResolvedValueOnce({
-        data: [booking(2, 'PK-BOB')],
-        total: 1,
-        page: 1,
-        limit: 20,
-        has_more: false,
-      });
+    mine.mockResolvedValueOnce('PK-JANE').mockResolvedValueOnce('PK-BOB');
     render(
       <QueryClientProvider client={createQueryClient()}>
         <AuthProvider>
           <Probe />
-          <SignedInBookings />
+          <SignedInData />
         </AuthProvider>
       </QueryClientProvider>,
     );

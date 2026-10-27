@@ -1,18 +1,18 @@
 import { Suspense } from 'react';
 import { PageLoading } from '@/components/ui/page-loading';
 import { ResolutionBadge } from '@/features/admin-bookings';
-import { StaffGate, StaffShell, StaffVenueSync } from '@/features/staff';
+import { StaffOnly, StaffShell, StaffVenueSync } from '@/features/staff';
 
 export default function StaffLayout({ children }: { children: React.ReactNode }) {
   // StaffVenueSync reads useSearchParams, which needs a Suspense boundary for
-  // `next build`. It sits outside the gate so the gate's permission check is
-  // already made for the active venue.
+  // `next build`. It sits outside StaffOnly so that check is made with the
+  // active venue's permissions.
   return (
     <Suspense fallback={<PageLoading />}>
       <StaffVenueSync>
-        <StaffGate permission="BOOKING:ReadAny">
+        <StaffOnly>
           <StaffShell badges={{ '/staff/resolution': <ResolutionBadge /> }}>{children}</StaffShell>
-        </StaffGate>
+        </StaffOnly>
       </StaffVenueSync>
     </Suspense>
   );

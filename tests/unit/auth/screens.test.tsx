@@ -4,7 +4,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { authApi } from '@/features/auth/api';
 import { AcceptInviteForm } from '@/features/auth/components/accept-invite-form';
 import { LoginForm } from '@/features/auth/components/login-form';
-import { RegisterForm } from '@/features/auth/components/register-form';
 import { ResetPasswordForm } from '@/features/auth/components/reset-password-form';
 import { VerifyEmail } from '@/features/auth/components/verify-email';
 import { ApiError } from '@/lib/api-client';
@@ -13,7 +12,6 @@ import { renderWithAuth, router, setSearch } from './render';
 vi.mock('@/features/auth/api', () => ({
   authApi: {
     permissions: vi.fn(),
-    register: vi.fn(),
     verifyEmail: vi.fn(),
     resendVerification: vi.fn(async () => undefined),
     forgotPassword: vi.fn(async () => undefined),
@@ -63,17 +61,17 @@ describe('LoginForm', () => {
 
   it('returns to a safe ?next= path, but never off-site', async () => {
     api.permissions.mockResolvedValue([]);
-    setSearch('next=/bookings/5');
+    setSearch('next=/staff/courts');
     const { unmount } = renderWithAuth(<LoginForm />, { login: vi.fn(async () => USER) });
     await fillLogin();
-    await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/bookings/5'));
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/staff/courts'));
     unmount();
 
     router.replace.mockClear();
     setSearch('next=//evil.example');
     renderWithAuth(<LoginForm />, { login: vi.fn(async () => USER) });
     await fillLogin();
-    await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/venues'));
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/customer-app'));
   });
 
   it("shows the backend's message on bad credentials", async () => {
@@ -114,49 +112,10 @@ describe('LoginForm', () => {
   });
 });
 
-describe('RegisterForm', () => {
-  async function fill(confirm = 'correct-horse-1') {
-    await userEvent.type(screen.getByLabelText('First name'), 'Jane');
-    await userEvent.type(screen.getByLabelText('Last name'), 'Doe');
-    await userEvent.type(screen.getByLabelText('Email'), 'jane@x.com');
-    await userEvent.type(screen.getByLabelText('Password'), 'correct-horse-1');
-    await userEvent.type(screen.getByLabelText('Confirm password'), confirm);
-    await userEvent.click(screen.getByRole('button', { name: 'Create account' }));
-  }
-
-  it('shows "check your email" with a resend after registering', async () => {
-    api.register.mockResolvedValue(USER);
-    renderWithAuth(<RegisterForm />);
-
-    await fill();
-
-    expect(await screen.findByRole('heading', { name: 'Check your email' })).toBeInTheDocument();
-    expect(screen.getByText(/jane@x.com/)).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: /resend/i }));
-    expect(api.resendVerification).toHaveBeenCalledWith('jane@x.com');
-  });
-
-  it('blocks a mismatched confirmation', async () => {
-    renderWithAuth(<RegisterForm />);
-
-    await fill('something-else');
-
-    expect(await screen.findByText('Passwords do not match.')).toBeInTheDocument();
-    expect(api.register).not.toHaveBeenCalled();
-  });
-
-  it('shows a taken email from the backend', async () => {
-    api.register.mockRejectedValue(
-      new ApiError(409, {
-        detail: 'An account with that email already exists.',
-        code: 'EMAIL_TAKEN',
-      }),
-    );
-    renderWithAuth(<RegisterForm />);
-
-    await fill();
-
-    expect(await screen.findByRole('alert')).toHaveTextContent('already exists');
+describe('LoginForm without sign-up', () => {
+  it('offers no way to create an account — customers register in the mobile app', () => {
+    renderWithAuth(<LoginForm />);
+    expect(screen.queryByRole('link', { name: /create an account/i })).not.toBeInTheDocument();
   });
 });
 

@@ -1,14 +1,8 @@
-export type LandingPath = '/staff' | '/venues';
+export type LandingPath = '/staff' | '/customer-app';
 
-/** Where a signed-in user starts (spec §8): staff to today's schedule,
- * players to venues. Decided by permission, never by role name. */
+/** Where a signed-in user starts (spec §8, ADR 0003): staff to today's
+ * schedule; everyone else to the page that points them at the mobile app —
+ * the web is the staff console only. Decided by permission, never by role. */
 export function landingPath(permissions: readonly string[]): LandingPath {
-  return permissions.includes('BOOKING:ReadAny') ? '/staff' : '/venues';
-}
-
-/** Online booking is player-only (`POST /bookings` is 403 for staff), so it
- * is offered to anyone who cannot read all bookings. Same signal as
- * `landingPath`; no role parsing. */
-export function canBookOnline(permissions: readonly string[]): boolean {
-  return !permissions.includes('BOOKING:ReadAny');
+  return permissions.includes('BOOKING:ReadAny') ? '/staff' : '/customer-app';
 }
