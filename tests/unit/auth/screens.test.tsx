@@ -50,8 +50,8 @@ async function fillLogin(email = 'jane@x.com', password = 'correct-horse-1') {
 }
 
 describe('LoginForm', () => {
-  it('signs in and lands by permission', async () => {
-    const login = vi.fn(async () => USER);
+  it('signs in and lands staff who are not customers on the console', async () => {
+    const login = vi.fn(async () => ({ ...USER, is_customer: false }));
     api.permissions.mockResolvedValue(['BOOKING:ReadAny']);
     renderWithAuth(<LoginForm />, { login });
 
@@ -59,6 +59,15 @@ describe('LoginForm', () => {
 
     await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/staff/schedule'));
     expect(login).toHaveBeenCalledWith({ email: 'jane@x.com', password: 'correct-horse-1' });
+  });
+
+  it('lands a customer on the booking home, even one who is also staff', async () => {
+    api.permissions.mockResolvedValue(['BOOKING:ReadAny']);
+    renderWithAuth(<LoginForm />, { login: vi.fn(async () => USER) });
+
+    await fillLogin();
+
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/book'));
   });
 
   it('returns to a safe ?next= path, but never off-site', async () => {
@@ -73,7 +82,7 @@ describe('LoginForm', () => {
     setSearch('next=//evil.example');
     renderWithAuth(<LoginForm />, { login: vi.fn(async () => USER) });
     await fillLogin();
-    await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/customer-app'));
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/book'));
   });
 
   it("shows the backend's message on bad credentials", async () => {

@@ -10,11 +10,11 @@ vi.mock('next/navigation', async () => (await import('../auth/render')).navigati
 beforeEach(() => vi.clearAllMocks());
 
 describe('StaffOnly', () => {
-  it('sends a customer who follows a staff link to the mobile-app notice', async () => {
+  it('sends a non-staff user who follows a staff link to the booking home', async () => {
     vi.mocked(authApi.permissions).mockResolvedValue([]);
     renderWithAuth(<StaffOnly>console</StaffOnly>, { status: 'authenticated' });
 
-    await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/customer-app'));
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/book'));
     expect(screen.queryByText('console')).not.toBeInTheDocument();
   });
 

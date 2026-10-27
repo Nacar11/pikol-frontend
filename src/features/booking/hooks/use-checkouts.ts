@@ -45,12 +45,15 @@ function useStore() {
   };
 }
 
-/** Pay now. Never optimistic: nothing is held until the 201 returns. */
+/** Pay now. Never optimistic: nothing is held until the 201 returns. A
+ * refusal (an hour just taken) refetches the grid, which drops those picks. */
 export function useCreateCheckout() {
+  const qc = useQueryClient();
   const store = useStore();
   return useMutation({
     mutationFn: (items: CheckoutItem[]) => checkoutApi.create(items),
     onSuccess: store,
+    onError: () => void qc.invalidateQueries({ queryKey: availabilityKeys.all }),
   });
 }
 

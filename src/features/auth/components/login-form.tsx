@@ -36,8 +36,8 @@ export function LoginForm() {
   const onSubmit = handleSubmit(async (input) => {
     setFailure(null);
     try {
-      await login(input);
-      router.replace(next ?? landingPath(await fetchPermissions()));
+      const user = await login(input);
+      router.replace(next ?? landingPath(await fetchPermissions(), user.is_customer));
     } catch (err) {
       setFailure({
         message: errorMessage(err, 'Could not sign in. Please try again.'),

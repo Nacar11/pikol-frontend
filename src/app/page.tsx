@@ -8,16 +8,16 @@ import { landingPath, useAuth, usePermissions } from '@/features/auth';
 /** `/` is only a redirect (spec §8): signed-out → login, otherwise the
  * landing page for the caller's permissions. */
 export default function RootPage() {
-  const { status } = useAuth();
+  const { status, user } = useAuth();
   const permissions = usePermissions();
   const router = useRouter();
 
   useEffect(() => {
     if (status === 'unauthenticated') router.replace('/login');
-    else if (status === 'authenticated' && permissions.data) {
-      router.replace(landingPath(permissions.data));
+    else if (status === 'authenticated' && user && permissions.data) {
+      router.replace(landingPath(permissions.data, user.is_customer));
     }
-  }, [status, permissions.data, router]);
+  }, [status, user, permissions.data, router]);
 
   return <PageLoading />;
 }

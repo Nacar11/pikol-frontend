@@ -1,10 +1,17 @@
-type LandingPath = '/staff/schedule' | '/customer-app';
+type LandingPath = '/staff/schedule' | '/book';
 
-/** Where a signed-in user starts (spec §8, ADR 0003): staff to today's
- * schedule; everyone else to the page that points them at the mobile app —
- * the web is the staff console only. Decided by permission, never by role. */
-export function landingPath(permissions: readonly string[]): LandingPath {
+/** Staff work the console; decided by permission, never by group name. */
+export function isStaff(permissions: readonly string[]): boolean {
+  return permissions.includes('BOOKING:ReadAny');
+}
+
+/** Where a signed-in user starts. Customers book — even staff who are also
+ * customers (the web stands in for the mobile app); staff who are not
+ * customers work the console; anyone else lands on /book, which tells them
+ * the account cannot book. */
+export function landingPath(permissions: readonly string[], isCustomer: boolean): LandingPath {
   // Straight to the page, never via /staff: a client navigation onto a
   // route that redirects while rendering breaks the App Router.
-  return permissions.includes('BOOKING:ReadAny') ? '/staff/schedule' : '/customer-app';
+  if (isCustomer || !isStaff(permissions)) return '/book';
+  return '/staff/schedule';
 }

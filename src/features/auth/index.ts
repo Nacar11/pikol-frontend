@@ -1,7 +1,7 @@
 export { AuthProvider } from './auth-provider';
 export { AuthGate } from './components/auth-gate';
 export { GuestGate } from './components/guest-gate';
-export { landingPath } from './landing';
+export { isStaff, landingPath } from './landing';
 export { GroupKindSchema, UserSchema } from './schemas';
 export type { User } from './schemas';
 export { useAuth } from './use-auth';

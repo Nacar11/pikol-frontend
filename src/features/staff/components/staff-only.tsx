@@ -3,20 +3,19 @@
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { PageLoading } from '@/components/ui/page-loading';
-import { landingPath, usePermissions } from '@/features/auth';
+import { isStaff, usePermissions } from '@/features/auth';
 
-/** The web is the staff console only (ADR 0003): anyone who is not staff —
- * a customer following an old link — goes to /customer-app rather than a
- * "Not available" inside the console frame. */
+/** Anyone who is not staff — a customer following a console link — goes to
+ * the booking home rather than a "Not available" inside the console frame. */
 export function StaffOnly({ children }: { children: React.ReactNode }) {
   const { data: permissions } = usePermissions();
   const router = useRouter();
-  const isStaff = permissions ? landingPath(permissions) === '/staff/schedule' : null;
+  const staff = permissions ? isStaff(permissions) : null;
 
   useEffect(() => {
-    if (isStaff === false) router.replace('/customer-app');
-  }, [isStaff, router]);
+    if (staff === false) router.replace('/book');
+  }, [staff, router]);
 
-  if (!isStaff) return <PageLoading />;
+  if (!staff) return <PageLoading />;
   return <>{children}</>;
 }

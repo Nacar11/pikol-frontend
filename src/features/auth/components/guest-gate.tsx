@@ -9,15 +9,15 @@ import { usePermissions } from '../use-permissions';
 
 /** Wraps the (auth) routes: a signed-in user is sent home, not shown a form. */
 export function GuestGate({ children }: { children: React.ReactNode }) {
-  const { status } = useAuth();
+  const { status, user } = useAuth();
   const permissions = usePermissions();
   const router = useRouter();
 
   useEffect(() => {
-    if (status === 'authenticated' && permissions.data) {
-      router.replace(landingPath(permissions.data));
+    if (status === 'authenticated' && user && permissions.data) {
+      router.replace(landingPath(permissions.data, user.is_customer));
     }
-  }, [status, permissions.data, router]);
+  }, [status, user, permissions.data, router]);
 
   if (status !== 'unauthenticated') return <PageLoading />;
   return <>{children}</>;
