@@ -36,6 +36,7 @@ export class ApiClient {
   private accessToken: string | null = null;
   private refreshHandler: (() => Promise<string>) | null = null;
   private refreshInFlight: Promise<string> | null = null;
+  private venueProvider: (() => number | null) | null = null;
   private readonly baseUrl: string;
 
   constructor(opts: { baseUrl: string }) {
@@ -48,6 +49,15 @@ export class ApiClient {
 
   setRefreshHandler(fn: (() => Promise<string>) | null): void {
     this.refreshHandler = fn;
+  }
+
+  /**
+   * The venue a staff request acts at, sent as `X-Venue-ID` (ADR 0003): the
+   * server authorises against the caller's groups AT that venue. Injected by
+   * the staff console, read per request — so lib/ never imports a feature.
+   */
+  setVenueProvider(fn: (() => number | null) | null): void {
+    this.venueProvider = fn;
   }
 
   get<T = unknown>(path: string, opts?: RequestOptions): Promise<T> {
@@ -110,6 +120,8 @@ export class ApiClient {
     h.set('X-Request-ID', generateRequestId());
     const token = tokenOverride ?? this.accessToken;
     if (token) h.set('Authorization', `Bearer ${token}`);
+    const venueId = this.venueProvider?.() ?? null;
+    if (venueId !== null) h.set('X-Venue-ID', String(venueId));
     return h;
   }
 

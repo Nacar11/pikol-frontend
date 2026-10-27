@@ -1,17 +1,26 @@
-import { screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { catalogApi } from '@/features/catalog/api';
-import { useStaffVenue, VenuePicker } from '@/features/staff';
+import { useQuery } from '@tanstack/react-query';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { useState } from 'react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { StaffVenueSync, useStaffVenue, VenuePicker } from '@/features/staff';
+import { staffApi } from '@/features/staff/api';
+import { VENUE_STORAGE_KEY } from '@/features/staff/use-staff-venue';
+import { apiClient } from '@/lib/api-client';
 import { renderWithAuth, router, setSearch } from '../auth/render';
 
-vi.mock('@/features/catalog/api', () => ({ catalogApi: { venues: vi.fn() } }));
+vi.mock('@/features/staff/api', () => ({ staffApi: { myVenues: vi.fn() } }));
 vi.mock('next/navigation', async () => ({
   ...(await import('../auth/render')).navigationMock,
   usePathname: () => '/staff/schedule',
 }));
 
-const venue = (id: number) => ({ id, name: `Venue ${id}`, address: null, is_active: true });
-const user = (venue_id: number | null) => ({ id: 1, venue_id, role: 'VENUE_STAFF' }) as never;
+const mine = (venue_id: number) => ({
+  venue_id,
+  name: `Venue ${venue_id}`,
+  is_master: false,
+  groups: ['Front desk'],
+});
+const user = { id: 1 } as never;
 
 function Probe() {
   const v = useStaffVenue();
@@ -24,55 +33,117 @@ function Probe() {
   );
 }
 
-function mockCatalog() {
-  vi.mocked(catalogApi.venues).mockResolvedValue({
-    data: [venue(2), venue(5)],
-    total: 2,
-    page: 1,
-    limit: 100,
-    has_more: false,
-  } as never);
-}
-
 describe('useStaffVenue', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockCatalog();
+    window.localStorage.clear();
+    setSearch('');
+    vi.mocked(staffApi.myVenues).mockResolvedValue([mine(2), mine(5)]);
   });
 
-  it('pins a venue-bound user to their venue, ignoring ?venue= and hiding the picker', async () => {
-    setSearch('venue=5');
-    renderWithAuth(<Probe />, { status: 'authenticated', user: user(3) });
-
-    expect(screen.getByTestId('id')).toHaveTextContent('3');
-    expect(screen.getByTestId('pick')).toHaveTextContent('false');
-    expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
-  });
-
-  it('uses ?venue= for the all-venues user when it is listed', async () => {
+  it('uses ?venue= when it is one of the caller’s venues', async () => {
     setSearch('venue=5&date=2026-10-23');
-    renderWithAuth(<Probe />, { status: 'authenticated', user: user(null) });
+    renderWithAuth(<Probe />, { status: 'authenticated', user });
 
     expect(await screen.findByRole('combobox')).toHaveValue('5');
     expect(screen.getByTestId('id')).toHaveTextContent('5');
     expect(screen.getByTestId('pick')).toHaveTextContent('true');
   });
 
-  it('falls back to the first venue when ?venue= is unlisted', async () => {
+  it('never acts at a venue the caller does not hold, whatever the URL says', async () => {
     setSearch('venue=99');
-    renderWithAuth(<Probe />, { status: 'authenticated', user: user(null) });
+    renderWithAuth(<Probe />, { status: 'authenticated', user });
 
     expect(await screen.findByRole('combobox')).toHaveValue('2');
-    expect(screen.getByTestId('id')).toHaveTextContent('2');
   });
 
-  it('setVenue replaces the URL and keeps the other params', async () => {
+  it('falls back to the venue remembered on this browser, then the first', async () => {
+    window.localStorage.setItem(VENUE_STORAGE_KEY, '5');
+    renderWithAuth(<Probe />, { status: 'authenticated', user });
+
+    expect(await screen.findByRole('combobox')).toHaveValue('5');
+  });
+
+  it('hides the picker when the caller works at one venue', async () => {
+    vi.mocked(staffApi.myVenues).mockResolvedValue([mine(3)]);
+    renderWithAuth(<Probe />, { status: 'authenticated', user });
+
+    await waitFor(() => expect(screen.getByTestId('id')).toHaveTextContent('3'));
+    expect(screen.getByTestId('pick')).toHaveTextContent('false');
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
+  });
+
+  it('setVenue remembers the choice and replaces the URL, keeping other params', async () => {
     setSearch('venue=5&date=2026-10-23');
-    renderWithAuth(<Probe />, { status: 'authenticated', user: user(null) });
+    renderWithAuth(<Probe />, { status: 'authenticated', user });
     const select = await screen.findByRole('combobox');
     const { default: userEvent } = await import('@testing-library/user-event');
     await userEvent.selectOptions(select, '2');
 
     expect(router.replace).toHaveBeenCalledWith('/staff/schedule?venue=2&date=2026-10-23');
+    expect(window.localStorage.getItem(VENUE_STORAGE_KEY)).toBe('2');
+  });
+});
+
+describe('StaffVenueSync', () => {
+  const fetches: (string | null)[] = [];
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    window.localStorage.clear();
+    fetches.length = 0;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_url: string, init: RequestInit) => {
+        fetches.push(new Headers(init.headers).get('X-Venue-ID'));
+        return new Response('[]', { status: 200 });
+      }),
+    );
+  });
+
+  afterEach(() => vi.unstubAllGlobals());
+
+  function Child() {
+    useQuery({ queryKey: ['probe'], queryFn: () => apiClient().get('/admin/bookings') });
+    return null;
+  }
+
+  /** Re-renders on click, so a changed ?venue= is read again. */
+  function Harness() {
+    const [, bump] = useState(0);
+    return (
+      <>
+        <button onClick={() => bump((n) => n + 1)}>rerender</button>
+        <StaffVenueSync>
+          <Child />
+        </StaffVenueSync>
+      </>
+    );
+  }
+
+  it('sends the active venue on staff requests and refetches when it changes', async () => {
+    vi.mocked(staffApi.myVenues).mockResolvedValue([mine(2), mine(5)]);
+    setSearch('venue=5');
+    renderWithAuth(<Harness />, { status: 'authenticated', user });
+    await waitFor(() => expect(fetches).toContain('5'));
+
+    setSearch('venue=2');
+    fireEvent.click(screen.getByRole('button', { name: 'rerender' }));
+
+    await waitFor(() => expect(fetches.at(-1)).toBe('2'));
+  });
+
+  it('stops sending the header once the console unmounts', async () => {
+    vi.mocked(staffApi.myVenues).mockResolvedValue([mine(2)]);
+    const view = renderWithAuth(<StaffVenueSync>{null}</StaffVenueSync>, {
+      status: 'authenticated',
+      user,
+    });
+    await waitFor(() => expect(staffApi.myVenues).toHaveBeenCalled());
+    view.unmount();
+
+    await apiClient().get('/users/me');
+
+    expect(fetches.at(-1)).toBeNull();
   });
 });

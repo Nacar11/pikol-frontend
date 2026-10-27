@@ -32,8 +32,8 @@ const USER = {
   first_name: 'Jane',
   last_name: 'Doe',
   mobile: null,
-  role: 'PLAYER' as const,
-  venue_id: null,
+  groups: [{ id: 1, name: 'Customer', kind: 'CUSTOMER' as const, venue_id: null }],
+  is_customer: true,
   is_active: false,
   email_verified_at: null,
 };

@@ -2,7 +2,7 @@
 
 import { useStaffVenue } from '../use-staff-venue';
 
-/** Shown only to the all-venues user. */
+/** Shown only when the caller can act at more than one venue. */
 export function VenuePicker() {
   const { venueId, venues, canPick, setVenue } = useStaffVenue();
   if (!canPick || venues.length === 0) return null;
@@ -15,7 +15,7 @@ export function VenuePicker() {
         className="rounded border border-border bg-surface px-2 py-1.5"
       >
         {venues.map((v) => (
-          <option key={v.id} value={v.id}>
+          <option key={v.venue_id} value={v.venue_id}>
             {v.name}
           </option>
         ))}

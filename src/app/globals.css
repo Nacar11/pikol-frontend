@@ -3,27 +3,29 @@
 @tailwind utilities;
 
 /*
- * Design tokens. Court green on warm neutral; the ball-yellow accent is for
- * small highlights only. Add a token here, then expose it in
+ * Design tokens. Black and white, as in asima: black chrome on a white
+ * canvas, greys for structure. The one hue is `destructive`, kept red for
+ * errors and destructive actions only. Status is carried by shape and label,
+ * never by colour alone. Add a token here, then expose it in
  * tailwind.config.ts — never use raw colours in components.
  */
 @layer base {
   :root {
-    --background: 60 9% 98%;
-    --foreground: 160 14% 10%;
+    --background: 0 0% 98%; /* #fafafa */
+    --foreground: 0 0% 4%; /* #0a0a0a */
     --surface: 0 0% 100%;
-    --primary: 158 64% 24%;
-    --primary-foreground: 60 9% 98%;
-    --accent: 66 92% 52%;
-    --accent-foreground: 160 14% 10%;
-    --muted: 60 5% 94%;
-    --muted-foreground: 160 6% 38%;
+    --primary: 0 0% 4%;
+    --primary-foreground: 0 0% 100%;
+    --accent: 0 0% 90%; /* #e5e5e5 — a neutral highlight */
+    --accent-foreground: 0 0% 4%;
+    --muted: 0 0% 96%; /* #f5f5f5 */
+    --muted-foreground: 0 0% 32%; /* #525252 — 7.8:1 on white */
     --destructive: 0 72% 45%;
     --destructive-foreground: 0 0% 100%;
-    --success: 158 64% 30%;
-    --border: 60 5% 87%;
-    --input: 60 5% 80%;
-    --ring: 158 64% 32%;
+    --success: 0 0% 4%;
+    --border: 0 0% 90%; /* #e5e5e5 */
+    --input: 0 0% 83%; /* #d4d4d4 */
+    --ring: 0 0% 4%;
     --radius: 6px;
   }
 

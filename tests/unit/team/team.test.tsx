@@ -27,21 +27,27 @@ type U = {
   first_name: string;
   last_name: string;
   mobile: string | null;
-  role: 'SUPER_ADMIN' | 'VENUE_MANAGER' | 'VENUE_STAFF' | 'PLAYER';
-  venue_id: number | null;
   is_active: boolean;
   email_verified_at: string | null;
+  groups: {
+    id: number;
+    name: string;
+    kind: 'CUSTOMER' | 'MASTER' | 'STAFF';
+    venue_id: number | null;
+  }[];
 };
+const FRONT_DESK = { id: 11, name: 'Front desk', kind: 'STAFF' as const, venue_id: 1 };
+const MASTERS = { id: 10, name: 'Venue master', kind: 'MASTER' as const, venue_id: 1 };
+const CUSTOMER = { id: 1, name: 'Customer', kind: 'CUSTOMER' as const, venue_id: null };
 const person = (id: number, over: Partial<U> = {}): U => ({
   id,
   email: `p${id}@x.ph`,
   first_name: `First${id}`,
   last_name: `Last${id}`,
   mobile: null,
-  role: 'VENUE_STAFF',
-  venue_id: 1,
   is_active: true,
   email_verified_at: '2026-10-01T00:00:00Z',
+  groups: [FRONT_DESK],
   ...over,
 });
 
@@ -97,19 +103,19 @@ describe('TeamList', () => {
     expect(await screen.findByText('Not available')).toBeInTheDocument();
   });
 
-  it('renders role labels and statuses', async () => {
+  it('renders each person’s staff groups and status', async () => {
     users = [
-      person(1, { role: 'VENUE_MANAGER' }),
+      person(1, { groups: [MASTERS] }),
       person(2, { email_verified_at: null }),
-      person(3, { is_active: false }),
-      person(4, { role: 'SUPER_ADMIN' }),
+      person(3, { is_active: false, groups: [CUSTOMER, FRONT_DESK] }),
+      person(4, { groups: [CUSTOMER] }),
     ];
     setup(MANAGER);
     expect(await screen.findByText('First2 Last2')).toBeInTheDocument();
-    expect(screen.getByText('Manager · Active')).toBeInTheDocument();
-    expect(screen.getByText('Staff · Invited')).toBeInTheDocument();
-    expect(screen.getByText('Staff · Deactivated')).toBeInTheDocument();
-    expect(screen.getByText('Owner · Active')).toBeInTheDocument();
+    expect(screen.getByText('Venue master · Active')).toBeInTheDocument();
+    expect(screen.getByText('Front desk · Invited')).toBeInTheDocument();
+    expect(screen.getByText('Front desk · Deactivated')).toBeInTheDocument();
+    expect(screen.getByText('No staff group · Active')).toBeInTheDocument();
   });
 
   it('loads more pages', async () => {
@@ -125,7 +131,7 @@ describe('TeamList', () => {
 
   it('a manager invite posts exactly email, first_name, last_name to /admin/venue-staff', async () => {
     const u = userEvent.setup();
-    users = [person(1, { role: 'VENUE_MANAGER' })];
+    users = [person(1, { groups: [MASTERS] })];
     http.post.mockImplementation((_p: string, body: { email: string }) => {
       users.push(person(9, { email: body.email, email_verified_at: null }));
       return Promise.resolve(users[users.length - 1]);
@@ -157,7 +163,7 @@ describe('TeamList', () => {
 
   it('an owner invite posts role and venue_id to /admin/users', async () => {
     const u = userEvent.setup();
-    http.post.mockResolvedValue(person(9, { role: 'VENUE_MANAGER', venue_id: 2 }));
+    http.post.mockResolvedValue(person(9, { groups: [{ ...MASTERS, venue_id: 2 }] }));
     setup(OWNER, { id: 1, venue_id: null, role: 'SUPER_ADMIN' } as never);
     await fillInvite(u);
     await u.selectOptions(screen.getByLabelText('Role'), 'VENUE_MANAGER');

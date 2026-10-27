@@ -10,7 +10,7 @@ import { authApi } from '@/features/auth/api';
 import { AuthContext } from '@/features/auth/auth-provider';
 import { availabilityApi } from '@/features/availability/api';
 import type { Availability } from '@/features/availability/schemas';
-import { catalogApi } from '@/features/catalog/api';
+import { staffApi } from '@/features/staff/api';
 import { ApiError } from '@/lib/api-client';
 import { createQueryClient } from '@/lib/query-client';
 
@@ -19,7 +19,7 @@ vi.mock('@/features/admin-bookings/api', () => ({
   adminBookingsApi: { day: vi.fn(), walkIn: vi.fn() },
 }));
 vi.mock('@/features/auth/api', () => ({ authApi: { permissions: vi.fn() } }));
-vi.mock('@/features/catalog/api', () => ({ catalogApi: { venues: vi.fn() } }));
+vi.mock('@/features/staff/api', () => ({ staffApi: { myVenues: vi.fn() } }));
 vi.mock('next/navigation', async () => ({
   ...(await import('../auth/render')).navigationMock,
   usePathname: () => '/staff/schedule',
@@ -113,7 +113,9 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(availabilityApi.day).mockResolvedValue(grid());
   vi.mocked(adminBookingsApi.day).mockResolvedValue(page([]) as never);
-  vi.mocked(catalogApi.venues).mockResolvedValue(page([]) as never);
+  vi.mocked(staffApi.myVenues).mockResolvedValue([
+    { venue_id: 1, name: 'Riverside', is_master: true, groups: [] },
+  ]);
 });
 
 describe('Schedule walk-ins', () => {

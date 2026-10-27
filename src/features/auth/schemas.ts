@@ -1,19 +1,35 @@
 import { z } from 'zod';
 
-/** Mirrors the backend's UserOut — snake_case, exactly. */
-export const RoleSchema = z.enum(['SUPER_ADMIN', 'VENUE_MANAGER', 'VENUE_STAFF', 'PLAYER']);
+/** A group as the backend's GroupRef carries it (ADR 0003). */
+export const GroupKindSchema = z.enum(['CUSTOMER', 'MASTER', 'STAFF']);
+export type GroupKind = z.infer<typeof GroupKindSchema>;
 
-export const AuthUserSchema = z.object({
+export const GroupRefSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  kind: GroupKindSchema,
+  venue_id: z.number().nullable(),
+});
+export type GroupRef = z.infer<typeof GroupRefSchema>;
+
+/** Mirrors the backend's UserOut — snake_case, exactly. There is no role:
+ * what someone may do is their groups, and the UI gates on permissions. */
+export const UserSchema = z.object({
   id: z.number(),
   email: z.string(),
   first_name: z.string(),
   last_name: z.string(),
   mobile: z.string().nullable(),
-  role: RoleSchema,
-  venue_id: z.number().nullable(),
   is_active: z.boolean(),
   email_verified_at: z.string().nullable(),
+  groups: z.array(GroupRefSchema),
 });
+
+/** GET /users/me — UserOut plus the Customer-group axis. */
+export type User = z.infer<typeof UserSchema>;
+
+/** GET /users/me — UserOut plus the Customer-group axis. */
+export const AuthUserSchema = UserSchema.extend({ is_customer: z.boolean() });
 export type AuthUser = z.infer<typeof AuthUserSchema>;
 
 export const TokenPairSchema = z.object({

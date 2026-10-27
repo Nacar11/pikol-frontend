@@ -3,10 +3,12 @@ import {
   AuthUserSchema,
   PermissionsSchema,
   TokenPairSchema,
+  UserSchema,
   type AuthUser,
   type LoginInput,
   type RegisterInput,
   type TokenPair,
+  type User,
 } from './schemas';
 
 /**
@@ -40,7 +42,7 @@ export const authApi = {
     return client.get<unknown>('/users/me/permissions').then((r) => PermissionsSchema.parse(r));
   },
 
-  register(input: RegisterInput, client: ApiClient = apiClient()): Promise<AuthUser> {
+  register(input: RegisterInput, client: ApiClient = apiClient()): Promise<User> {
     // confirm_password is a form concern; the backend forbids unknown fields.
     const body = {
       email: input.email,
@@ -51,7 +53,7 @@ export const authApi = {
     };
     return client
       .post<unknown>('/auth/register', body, { skipRefresh: true })
-      .then((r) => AuthUserSchema.parse(r));
+      .then((r) => UserSchema.parse(r));
   },
 
   verifyEmail(token: string, client: ApiClient = apiClient()): Promise<void> {

@@ -2,7 +2,8 @@ export { AuthProvider, REFRESH_STORAGE_KEY, type AuthStatus } from './auth-provi
 export { AuthGate } from './components/auth-gate';
 export { GuestGate } from './components/guest-gate';
 export { canBookOnline, landingPath, type LandingPath } from './landing';
-export type { AuthUser } from './schemas';
+export { GroupRefSchema, UserSchema } from './schemas';
+export type { AuthUser, GroupKind, GroupRef, User } from './schemas';
 export { useAuth } from './use-auth';
 export { usePermissions } from './use-permissions';
 export { AcceptInviteForm } from './components/accept-invite-form';

@@ -8,7 +8,7 @@ import { useAuth } from '@/features/auth';
 import { StaffGate } from '@/features/staff';
 import { errorMessage } from '@/lib/api-error';
 import { useResendInvitation, useRevokeInvitation, useSetActive, useTeam } from '../hooks/use-team';
-import { ROLE_LABELS, type User } from '../schemas';
+import { staffGroupsOf, type User } from '../schemas';
 import { InviteForm } from './invite-form';
 
 export function TeamList() {
@@ -69,7 +69,7 @@ function Team() {
                     <p className="font-medium">{name}</p>
                     <p className="text-sm text-muted-foreground">{u.email}</p>
                     <p className="text-sm">
-                      {ROLE_LABELS[u.role]} · {statusOf(u)}
+                      {staffGroupsOf(u)} · {statusOf(u)}
                     </p>
                   </div>
                   <div className="flex gap-2">

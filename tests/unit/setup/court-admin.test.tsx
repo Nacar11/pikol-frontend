@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { authApi } from '@/features/auth/api';
-import { catalogApi } from '@/features/catalog/api';
+import { staffApi } from '@/features/staff/api';
 import { catalogKeys } from '@/features/catalog/keys';
 import { CourtAdmin } from '@/features/setup';
 import { setupApi } from '@/features/setup/api';
@@ -15,7 +15,7 @@ vi.mock('@/features/setup/api', () => ({
   setupApi: { courts: vi.fn(), createCourt: vi.fn(), updateCourt: vi.fn() },
 }));
 vi.mock('@/features/auth/api', () => ({ authApi: { permissions: vi.fn() } }));
-vi.mock('@/features/catalog/api', () => ({ catalogApi: { venues: vi.fn() } }));
+vi.mock('@/features/staff/api', () => ({ staffApi: { myVenues: vi.fn() } }));
 vi.mock('next/navigation', async () => ({
   ...(await import('../auth/render')).navigationMock,
   usePathname: () => '/staff/courts',
@@ -37,16 +37,10 @@ const page = (data: C[]) => ({ data, total: data.length, page: 1, limit: 100, ha
 
 function setup(permissions = ['COURT:Manage']) {
   vi.mocked(authApi.permissions).mockResolvedValue(permissions as never);
-  vi.mocked(catalogApi.venues).mockResolvedValue({
-    data: [
-      { id: 2, name: 'Riverside', address: null, is_active: true },
-      { id: 5, name: 'Lakeside', address: null, is_active: true },
-    ],
-    total: 2,
-    page: 1,
-    limit: 100,
-    has_more: false,
-  } as never);
+  vi.mocked(staffApi.myVenues).mockResolvedValue([
+    { venue_id: 2, name: 'Riverside', is_master: true, groups: [] },
+    { venue_id: 5, name: 'Lakeside', is_master: true, groups: [] },
+  ]);
   renderWithAuth(<CourtAdmin />, { status: 'authenticated', user: owner });
 }
 

@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { adminBookingsApi } from '@/features/admin-bookings';
 import { authApi } from '@/features/auth/api';
 import { catalogApi } from '@/features/catalog/api';
+import { staffApi } from '@/features/staff/api';
 import { ClosureAdmin } from '@/features/setup';
 import { setupApi } from '@/features/setup/api';
 import { ApiError } from '@/lib/api-client';
@@ -16,7 +17,8 @@ vi.mock('@/features/admin-bookings/api', () => ({
   adminBookingsApi: { list: vi.fn(), reopenClosure: vi.fn() },
 }));
 vi.mock('@/features/auth/api', () => ({ authApi: { permissions: vi.fn() } }));
-vi.mock('@/features/catalog/api', () => ({ catalogApi: { venues: vi.fn(), courts: vi.fn() } }));
+vi.mock('@/features/catalog/api', () => ({ catalogApi: { courts: vi.fn() } }));
+vi.mock('@/features/staff/api', () => ({ staffApi: { myVenues: vi.fn() } }));
 vi.mock('next/navigation', async () => ({
   ...(await import('../auth/render')).navigationMock,
   usePathname: () => '/staff/closures',
@@ -64,13 +66,9 @@ const bookingPage = (data: unknown[]) => ({
 
 function renderPage(permissions = ['CLOSURE:Manage']) {
   vi.mocked(authApi.permissions).mockResolvedValue(permissions as never);
-  vi.mocked(catalogApi.venues).mockResolvedValue({
-    data: [{ id: 2, name: 'Riverside', address: null, is_active: true }],
-    total: 1,
-    page: 1,
-    limit: 100,
-    has_more: false,
-  } as never);
+  vi.mocked(staffApi.myVenues).mockResolvedValue([
+    { venue_id: 2, name: 'Riverside', is_master: true, groups: [] },
+  ]);
   renderWithAuth(<ClosureAdmin />, { status: 'authenticated', user: owner });
 }
 

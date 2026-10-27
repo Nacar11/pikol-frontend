@@ -1,19 +1,8 @@
 import { z } from 'zod';
+import { UserSchema, type User } from '@/features/auth';
 import { pageSchema } from '@/lib/page';
 
-/** Mirrors the backend's UserOut — snake_case, exactly. */
-export const UserSchema = z.object({
-  id: z.number(),
-  email: z.string(),
-  first_name: z.string(),
-  last_name: z.string(),
-  mobile: z.string().nullable(),
-  role: z.enum(['SUPER_ADMIN', 'VENUE_MANAGER', 'VENUE_STAFF', 'PLAYER']),
-  venue_id: z.number().nullable(),
-  is_active: z.boolean(),
-  email_verified_at: z.string().nullable(),
-});
-export type User = z.infer<typeof UserSchema>;
+export { UserSchema, type User };
 export const UserPageSchema = pageSchema(UserSchema);
 export type UserPage = z.infer<typeof UserPageSchema>;
 
@@ -32,9 +21,9 @@ export type AnyInvite = StaffInvite & {
   venue_id: number;
 };
 
-export const ROLE_LABELS: Record<User['role'], string> = {
-  SUPER_ADMIN: 'Owner',
-  VENUE_MANAGER: 'Manager',
-  VENUE_STAFF: 'Staff',
-  PLAYER: 'Player',
-};
+/** A person's staff groups at the venue in view — the API already filters
+ * out other venues, so only Customer needs dropping here. */
+export function staffGroupsOf(user: User): string {
+  const names = user.groups.filter((g) => g.kind !== 'CUSTOMER').map((g) => g.name);
+  return names.length > 0 ? names.join(', ') : 'No staff group';
+}

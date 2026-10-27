@@ -44,6 +44,35 @@ describe('ApiClient', () => {
     expect(header(calls[0]!, 'X-Request-ID')).toMatch(/[0-9a-f-]{36}/);
   });
 
+  it('sends X-Venue-ID only while the venue provider names one', async () => {
+    responder = () => jsonResponse(200, {});
+    const client = new ApiClient({ baseUrl: 'http://api' });
+    let venue: number | null = 7;
+    client.setVenueProvider(() => venue);
+
+    await client.get('/admin/bookings');
+    venue = null;
+    await client.get('/admin/bookings');
+
+    expect(header(calls[0]!, 'X-Venue-ID')).toBe('7');
+    expect(header(calls[1]!, 'X-Venue-ID')).toBeNull();
+  });
+
+  it('keeps the venue header on the retry after a refresh', async () => {
+    responder = (call) =>
+      header(call, 'Authorization') === 'Bearer fresh'
+        ? jsonResponse(200, {})
+        : jsonResponse(401, { detail: 'expired', code: 'INVALID_TOKEN' });
+    const client = new ApiClient({ baseUrl: 'http://api' });
+    client.setAccessToken('stale');
+    client.setRefreshHandler(async () => 'fresh');
+    client.setVenueProvider(() => 3);
+
+    await client.get('/admin/bookings');
+
+    expect(header(calls[1]!, 'X-Venue-ID')).toBe('3');
+  });
+
   it('refreshes once on 401 and retries with the new token', async () => {
     responder = (call) =>
       header(call, 'Authorization') === 'Bearer fresh'
