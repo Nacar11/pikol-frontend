@@ -114,6 +114,39 @@ describe('ParameterTable', () => {
     expect(within(other).queryByRole('alert')).not.toBeInTheDocument();
   });
 
+  it('names known keys in plain words, with units, grouped into sections', async () => {
+    api.list.mockResolvedValue([
+      param('default_slot_price_centavos', '50000', 'int', 'Price when no rule matches'),
+      param('hold_duration_minutes', '15', 'int', 'How long a hold lasts'),
+      param('brand_name', 'Pikol', 'string', 'Shown on receipts'),
+    ] as never);
+    setup();
+    const money = await screen.findByRole('region', { name: 'Money' });
+    expect(within(money).getByText('Default hourly price')).toBeInTheDocument();
+    expect(within(money).getByText('₱500')).toBeInTheDocument();
+    const bookings = screen.getByRole('region', { name: 'Bookings' });
+    expect(within(bookings).getByText('Hold length')).toBeInTheDocument();
+    expect(within(bookings).getByText('15').closest('p')).toHaveTextContent('15 min');
+    // An unknown key keeps its raw name, under Other.
+    expect(
+      within(screen.getByRole('region', { name: 'Other' })).getByText('brand_name'),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: /Accounts/ })).not.toBeInTheDocument();
+  });
+
+  it('marks an edited card unsaved, and Reset puts the value back', async () => {
+    const u = userEvent.setup();
+    api.list.mockResolvedValue(rows() as never);
+    setup();
+    const input = await screen.findByLabelText('hold_duration_minutes');
+    await u.clear(input);
+    await u.type(input, '20');
+    expect(screen.getByText('Unsaved')).toBeInTheDocument();
+    await u.click(screen.getByRole('button', { name: 'Reset' }));
+    expect(input).toHaveValue(15);
+    expect(screen.queryByText('Unsaved')).not.toBeInTheDocument();
+  });
+
   it('shows Not available without PARAMETER:Manage', async () => {
     setup(['BOOKING:ReadAny']);
     expect(await screen.findByText('Not available')).toBeInTheDocument();
