@@ -55,7 +55,7 @@ describe('LoginForm', () => {
 
     await fillLogin();
 
-    await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/staff'));
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/staff/schedule'));
     expect(login).toHaveBeenCalledWith({ email: 'jane@x.com', password: 'correct-horse-1' });
   });
 

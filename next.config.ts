@@ -33,6 +33,12 @@ assertDeployEnv();
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // /staff has no page of its own. Redirected here, as HTTP, before React
+  // renders: a page calling redirect() during a client navigation under the
+  // staff layout crashed the App Router ("Rendered more hooks…").
+  async redirects() {
+    return [{ source: '/staff', destination: '/staff/schedule', permanent: false }];
+  },
   async headers() {
     return [{ source: '/:path*', headers: SECURITY_HEADERS }];
   },

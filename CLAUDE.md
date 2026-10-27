@@ -52,7 +52,8 @@ for that app. A signed-in non-staff user lands on `/customer-app`.
 Routes: `/login`, `/forgot-password`, `/reset-password`, `/verify-email`,
 `/accept-invite`, `/customer-app`, and the staff console under `/staff`
 (every page gated on a permission code, never a group name): `/staff`
-redirects to `/staff/schedule`; the others are
+redirects to `/staff/schedule` in `next.config.ts` — never with a page calling
+`redirect()`, which crashed the App Router on client navigation; the others are
 `/staff/schedule?venue=&date=`, `/staff/bookings/[bookingId]`,
 `/staff/resolution`, `/staff/closures`, `/staff/courts`,
 `/staff/courts/[courtId]/pricing`, `/staff/venue-staff`, `/staff/users`

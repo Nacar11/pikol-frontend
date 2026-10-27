@@ -11,7 +11,7 @@ import { landingPath, usePermissions } from '@/features/auth';
 export function StaffOnly({ children }: { children: React.ReactNode }) {
   const { data: permissions } = usePermissions();
   const router = useRouter();
-  const isStaff = permissions ? landingPath(permissions) === '/staff' : null;
+  const isStaff = permissions ? landingPath(permissions) === '/staff/schedule' : null;
 
   useEffect(() => {
     if (isStaff === false) router.replace('/customer-app');
