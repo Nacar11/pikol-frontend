@@ -1,6 +1,6 @@
 'use client';
 
-import { LogOut, Menu, X } from 'lucide-react';
+import { LogOut, Menu, PanelLeftClose, PanelLeftOpen, X } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -10,13 +10,34 @@ import { SECTION_LABELS, visibleSections } from '../nav-links';
 import { useStaffVenue } from '../use-staff-venue';
 import { VenueSwitcher } from './venue-switcher';
 
+export const SIDEBAR_STORAGE_KEY = 'pikol:staff_sidebar';
+
 function isActive(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+/** Browser storage can be absent or throw; a forgotten rail width is fine. */
+function rememberedCollapsed(): boolean {
+  try {
+    return window.localStorage.getItem(SIDEBAR_STORAGE_KEY) === 'collapsed';
+  } catch {
+    return false;
+  }
+}
+
+function rememberCollapsed(collapsed: boolean): void {
+  try {
+    window.localStorage.setItem(SIDEBAR_STORAGE_KEY, collapsed ? 'collapsed' : 'expanded');
+  } catch {
+    // Not remembering is fine.
+  }
+}
+
 /**
  * The staff console frame, asima's shape: a fixed black sidebar on md+, a
- * drawer below it. Every link is filtered by the permissions held at the
+ * drawer below it. On md+ the sidebar collapses to an icon rail; the choice
+ * is remembered on this browser. Labels stay in the DOM as sr-only, so the
+ * rail's links keep their accessible names. Every link is filtered by the permissions held at the
  * active venue — never by role.
  *
  * `badges` maps a link's href to a count element. It is passed in, not
@@ -31,10 +52,27 @@ export function StaffShell({
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  // Width transitions only after the remembered width is applied, so a
+  // collapsed rail does not animate shut on every page load.
+  const [animate, setAnimate] = useState(false);
   const { data: permissions } = usePermissions();
   const sections = visibleSections(permissions ?? []);
 
   useEffect(() => setOpen(false), [pathname]);
+
+  useEffect(() => {
+    setCollapsed(rememberedCollapsed());
+    const frame = requestAnimationFrame(() => setAnimate(true));
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
+  const toggleCollapsed = () => {
+    setCollapsed((c) => {
+      rememberCollapsed(!c);
+      return !c;
+    });
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -59,12 +97,22 @@ export function StaffShell({
         aria-label="Staff navigation"
         className={cn(
           'fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-neutral-900 bg-neutral-950 text-neutral-100 transition-transform duration-200 ease-out motion-reduce:transition-none',
+          animate && 'md:transition-[width] md:motion-reduce:transition-none',
           'md:translate-x-0',
+          collapsed && 'md:w-16',
           open ? 'translate-x-0' : '-translate-x-full',
         )}
       >
-        <div className="flex h-14 items-center justify-between border-b border-neutral-900 px-4">
-          <Link href="/staff/schedule" className="flex items-baseline gap-2 hover:opacity-80">
+        <div
+          className={cn(
+            'flex h-14 items-center justify-between border-b border-neutral-900 px-4',
+            collapsed && 'md:justify-center md:px-2',
+          )}
+        >
+          <Link
+            href="/staff/schedule"
+            className={cn('flex items-baseline gap-2 hover:opacity-80', collapsed && 'md:hidden')}
+          >
             <span className="text-base font-semibold tracking-tight">pikol</span>
             <span className="text-[10px] font-semibold uppercase tracking-widest text-neutral-500">
               Staff
@@ -78,16 +126,39 @@ export function StaffShell({
           >
             <X aria-hidden className="size-5" />
           </button>
+          <button
+            type="button"
+            onClick={toggleCollapsed}
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            aria-expanded={!collapsed}
+            aria-controls="staff-sidebar"
+            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            className="hidden size-9 items-center justify-center rounded-md text-neutral-400 hover:bg-neutral-900 hover:text-white focus-visible:ring-white md:inline-flex"
+          >
+            {collapsed ? (
+              <PanelLeftOpen aria-hidden className="size-4" />
+            ) : (
+              <PanelLeftClose aria-hidden className="size-4" />
+            )}
+          </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto py-4">
-          <VenueSwitcher />
-          <nav aria-label="Staff" className="mt-6 px-3">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden py-4">
+          <VenueSwitcher collapsed={collapsed} />
+          <nav aria-label="Staff" className={cn('mt-6 px-3', collapsed && 'md:px-2')}>
             {sections.map(({ section, links }, index) => (
               <div key={section} className={index > 0 ? 'mt-6' : undefined}>
-                <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-neutral-500">
+                <p
+                  className={cn(
+                    'mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-neutral-500',
+                    collapsed && 'md:sr-only',
+                  )}
+                >
                   {SECTION_LABELS[section]}
                 </p>
+                {collapsed && index > 0 && (
+                  <hr aria-hidden className="mx-2 mb-2 hidden border-neutral-800 md:block" />
+                )}
                 <ul className="space-y-1">
                   {links.map(({ href, label, icon: Icon }) => {
                     const active = isActive(pathname, href);
@@ -96,16 +167,26 @@ export function StaffShell({
                         <Link
                           href={href}
                           aria-current={active ? 'page' : undefined}
+                          title={collapsed ? label : undefined}
                           className={cn(
-                            'flex min-h-11 items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors duration-150 focus-visible:ring-white md:min-h-9',
+                            'relative flex min-h-11 items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors duration-150 focus-visible:ring-white md:min-h-9',
+                            collapsed && 'md:min-h-10 md:justify-center md:px-0',
                             active
                               ? 'bg-neutral-800 text-white'
                               : 'text-neutral-300 hover:bg-neutral-900 hover:text-white',
                           )}
                         >
                           <Icon aria-hidden className="size-4 shrink-0" />
-                          <span className="flex-1">{label}</span>
-                          {badges[href]}
+                          <span className={cn('flex-1', collapsed && 'md:sr-only')}>{label}</span>
+                          {badges[href] && (
+                            <span
+                              className={cn(
+                                collapsed && 'md:absolute md:-right-1 md:-top-1 md:scale-90',
+                              )}
+                            >
+                              {badges[href]}
+                            </span>
+                          )}
                         </Link>
                       </li>
                     );
@@ -116,7 +197,7 @@ export function StaffShell({
           </nav>
         </div>
 
-        <SignedIn permissions={permissions ?? []} />
+        <SignedIn permissions={permissions ?? []} collapsed={collapsed} />
       </aside>
 
       {/* Mobile drawer backdrop. */}
@@ -145,7 +226,14 @@ export function StaffShell({
         <span className="text-sm font-semibold tracking-tight">pikol</span>
       </header>
 
-      <div className="md:pl-64">
+      <div
+        className={cn(
+          'md:pl-64',
+          animate &&
+            'md:transition-[padding] md:duration-200 md:ease-out md:motion-reduce:transition-none',
+          collapsed && 'md:pl-16',
+        )}
+      >
         <main
           id="staff-main"
           tabIndex={-1}
@@ -160,7 +248,13 @@ export function StaffShell({
 
 /** Who is signed in, set apart at the bottom with sign-out. "Super admin"
  * is read from an owner-only permission, never from a role. */
-function SignedIn({ permissions }: { permissions: readonly string[] }) {
+function SignedIn({
+  permissions,
+  collapsed,
+}: {
+  permissions: readonly string[];
+  collapsed: boolean;
+}) {
   const { user, logout } = useAuth();
   const { venue } = useStaffVenue();
   const router = useRouter();
@@ -170,14 +264,20 @@ function SignedIn({ permissions }: { permissions: readonly string[] }) {
     ? 'Super admin'
     : (venue?.groups.join(', ') ?? '');
   return (
-    <div className="flex items-center gap-3 border-t border-neutral-900 px-4 py-3">
+    <div
+      className={cn(
+        'flex items-center gap-3 border-t border-neutral-900 px-4 py-3',
+        collapsed && 'md:flex-col md:gap-1 md:px-2',
+      )}
+    >
       <span
         aria-hidden
+        title={collapsed ? `${user.first_name} ${user.last_name} · ${role}` : undefined}
         className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-neutral-800 text-xs font-semibold"
       >
         {initials}
       </span>
-      <div className="min-w-0 flex-1">
+      <div className={cn('min-w-0 flex-1', collapsed && 'md:sr-only')}>
         <p className="truncate text-sm font-medium">
           {user.first_name} {user.last_name}
         </p>
@@ -186,6 +286,7 @@ function SignedIn({ permissions }: { permissions: readonly string[] }) {
       <button
         type="button"
         aria-label="Sign out"
+        title={collapsed ? 'Sign out' : undefined}
         onClick={async () => {
           await logout();
           router.replace('/login');

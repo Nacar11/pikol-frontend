@@ -43,6 +43,7 @@ function setup(permissions: string[], badges = {}) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  window.localStorage.clear();
   setSearch('');
   vi.mocked(staffApi.myVenues).mockResolvedValue([
     { venue_id: 2, name: 'Riverside', is_master: false, groups: ['Front desk'] },
@@ -117,6 +118,30 @@ describe('StaffShell', () => {
     await u.keyboard('{Escape}');
 
     expect(open).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('collapses to a rail that keeps every link name, and remembers it', async () => {
+    const u = userEvent.setup();
+    setup(FRONT_DESK);
+    const collapse = await screen.findByRole('button', { name: 'Collapse sidebar' });
+    expect(collapse).toHaveAttribute('aria-expanded', 'true');
+
+    await u.click(collapse);
+
+    const expand = screen.getByRole('button', { name: 'Expand sidebar' });
+    expect(expand).toHaveAttribute('aria-expanded', 'false');
+    expect(window.localStorage.getItem('pikol:staff_sidebar')).toBe('collapsed');
+    const nav = screen.getByRole('navigation', { name: 'Staff' });
+    expect(within(nav).getByRole('link', { name: 'Schedule' })).toHaveAttribute(
+      'title',
+      'Schedule',
+    );
+  });
+
+  it('opens collapsed when this browser last chose it', async () => {
+    window.localStorage.setItem('pikol:staff_sidebar', 'collapsed');
+    setup(FRONT_DESK);
+    expect(await screen.findByRole('button', { name: 'Expand sidebar' })).toBeInTheDocument();
   });
 
   it('offers a skip link to the page body', async () => {
