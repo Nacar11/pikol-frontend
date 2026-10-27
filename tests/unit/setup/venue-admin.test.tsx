@@ -1,6 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { adminBookingsApi } from '@/features/admin-bookings';
 import { authApi } from '@/features/auth/api';
 import { VenueAdmin } from '@/features/setup';
 import { setupApi } from '@/features/setup/api';
@@ -8,8 +9,9 @@ import { ApiError } from '@/lib/api-client';
 import { renderWithAuth } from '../auth/render';
 
 vi.mock('@/features/setup/api', () => ({
-  setupApi: { venues: vi.fn(), createVenue: vi.fn(), updateVenue: vi.fn() },
+  setupApi: { venues: vi.fn(), createVenue: vi.fn(), updateVenue: vi.fn(), courts: vi.fn() },
 }));
+vi.mock('@/features/admin-bookings/api', () => ({ adminBookingsApi: { day: vi.fn() } }));
 vi.mock('@/features/auth/api', () => ({ authApi: { permissions: vi.fn() } }));
 
 const api = vi.mocked(setupApi);
@@ -53,9 +55,10 @@ describe('VenueAdmin', () => {
     });
     setup();
     await screen.findByText('Venue 1');
+    await u.click(screen.getByRole('button', { name: 'Add venue' }));
     await u.type(screen.getByLabelText('Name'), 'Lakeside');
     await u.type(screen.getByLabelText('Address'), '12 Shore Rd');
-    await u.click(screen.getByRole('button', { name: 'Add venue' }));
+    await u.click(screen.getByRole('button', { name: 'Create venue' }));
     await waitFor(() =>
       expect(api.createVenue).toHaveBeenCalledWith({ name: 'Lakeside', address: '12 Shore Rd' }),
     );
@@ -101,9 +104,51 @@ describe('VenueAdmin', () => {
     );
     setup();
     await screen.findByText('Venue 1');
-    await u.type(screen.getByLabelText('Name'), 'Venue 1');
     await u.click(screen.getByRole('button', { name: 'Add venue' }));
+    await u.type(screen.getByLabelText('Name'), 'Venue 1');
+    await u.click(screen.getByRole('button', { name: 'Create venue' }));
     expect(await screen.findByText('Venue name already exists')).toBeInTheDocument();
+  });
+
+  it('shows each venue’s active courts and booked hours, linking to its courts', async () => {
+    vi.useFakeTimers({ toFake: ['Date'], now: new Date('2026-10-23T04:00:00Z') });
+    api.venues.mockResolvedValue(page([venue(1, { address: '12 Shore Rd' })]) as never);
+    api.courts.mockResolvedValue({
+      data: [
+        { id: 7, venue_id: 1, name: 'A', sort_order: 1, is_active: true },
+        { id: 8, venue_id: 1, name: 'B', sort_order: 2, is_active: false },
+      ],
+      total: 2,
+      page: 1,
+      limit: 100,
+      has_more: false,
+    } as never);
+    const slot = (h: number) => ({ starts_at: `2026-10-23T${h}:00:00+08:00`, price_centavos: 0 });
+    vi.mocked(adminBookingsApi.day).mockResolvedValue({
+      data: [
+        {
+          court_id: 7,
+          type: 'WALK_IN',
+          booking_status: 'CONFIRMED',
+          expires_at: null,
+          slots: [slot(10), slot(11)],
+        },
+      ],
+      total: 1,
+      page: 1,
+      limit: 200,
+      has_more: false,
+    } as never);
+    setup(['VENUE:Manage', 'COURT:Manage', 'BOOKING:ReadAny']);
+    expect(await screen.findByText('12 Shore Rd')).toBeInTheDocument();
+    expect(await screen.findByText('1 active')).toBeInTheDocument();
+    expect(await screen.findByText('2 h')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Courts at Venue 1' })).toHaveAttribute(
+      'href',
+      '/staff/courts?venue=1',
+    );
+    expect(adminBookingsApi.day).toHaveBeenCalledWith(1, '2026-10-23');
+    vi.useRealTimers();
   });
 
   it('shows Not available without VENUE:Manage', async () => {
