@@ -1,7 +1,8 @@
 import { QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { AuthProvider, REFRESH_STORAGE_KEY, useAuth } from '@/features/auth';
+import { AuthProvider, useAuth } from '@/features/auth';
+import { REFRESH_STORAGE_KEY } from '@/features/auth/auth-provider';
 import { authApi } from '@/features/auth/api';
 import { createQueryClient } from '@/lib/query-client';
 

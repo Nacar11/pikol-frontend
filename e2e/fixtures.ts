@@ -2,7 +2,7 @@ import { test as base, expect, type APIRequestContext, type Page } from '@playwr
 
 const API = 'http://localhost:8100/api/v1';
 const PASSWORD = 'E2e-password-1';
-export const OWNER = { email: 'owner.e2e@example.com', password: PASSWORD };
+const OWNER = { email: 'owner.e2e@example.com', password: PASSWORD };
 export const DESK = { email: 'desk.e2e@example.com', password: PASSWORD };
 
 /** A fresh session per test. Refresh tokens rotate and a reused one revokes

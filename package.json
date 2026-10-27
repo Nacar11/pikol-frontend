@@ -18,7 +18,7 @@
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"tests/**/*.{ts,tsx}\" \"e2e/**/*.ts\" playwright.config.ts",
     "test": "vitest run",
     "test:watch": "vitest",
-    "deadcode": "knip",
+    "deadcode": "knip && knip --production --include files,exports,dependencies",
     "e2e": "bash scripts/e2e-db.sh && playwright test"
   },
   "dependencies": {

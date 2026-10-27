@@ -7,6 +7,7 @@ import { apiClient } from '@/lib/api-client';
 import { authApi } from './api';
 import type { AuthUser, LoginInput, TokenPair } from './schemas';
 
+/** @internal Exported for tests. */
 export const REFRESH_STORAGE_KEY = 'pikol:refresh_token';
 const REFRESH_LOCK = 'pikol:refresh';
 

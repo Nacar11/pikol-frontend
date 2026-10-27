@@ -1,4 +1,4 @@
-export { AuthProvider, REFRESH_STORAGE_KEY } from './auth-provider';
+export { AuthProvider } from './auth-provider';
 export { AuthGate } from './components/auth-gate';
 export { GuestGate } from './components/guest-gate';
 export { landingPath } from './landing';

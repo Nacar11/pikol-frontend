@@ -4,6 +4,7 @@ import type { Availability, GridCourt, GridStatus } from './schemas';
  * indexes into that court's 24 slots. */
 export type Selection = { court_id: number; start: number; end: number };
 
+/** @internal Exported for tests. */
 export const MAX_HOURS = 12;
 
 function courtOf(grid: Availability, courtId: number): GridCourt | undefined {

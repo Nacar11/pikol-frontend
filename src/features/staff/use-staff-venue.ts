@@ -5,6 +5,7 @@ import { useMyVenues } from './hooks/use-my-venues';
 import { readStorage, writeStorage } from '@/lib/storage';
 import type { MyVenue } from './schemas';
 
+/** @internal Exported for tests. */
 export const VENUE_STORAGE_KEY = 'pikol:staff_venue';
 
 /**

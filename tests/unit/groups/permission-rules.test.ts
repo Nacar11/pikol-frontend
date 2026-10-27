@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { checkboxState } from '@/features/groups';
+import { checkboxState } from '@/features/groups/permission-rules';
 
 const base = {
   draft: new Set(['BOOKING:ReadAny']),
