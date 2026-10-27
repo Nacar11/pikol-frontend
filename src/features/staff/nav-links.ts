@@ -11,9 +11,9 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 
-export type StaffSection = 'operations' | 'setup' | 'masters';
+type StaffSection = 'operations' | 'setup' | 'masters';
 
-export type StaffLink = {
+type StaffLink = {
   href: string;
   label: string;
   /** Held AT THE ACTIVE VENUE (permissions are per venue — ADR 0003). */
@@ -28,7 +28,7 @@ export const SECTION_LABELS: Record<StaffSection, string> = {
   masters: 'Masters',
 };
 
-export const STAFF_LINKS: StaffLink[] = [
+const STAFF_LINKS: StaffLink[] = [
   {
     href: '/staff/schedule',
     label: 'Schedule',

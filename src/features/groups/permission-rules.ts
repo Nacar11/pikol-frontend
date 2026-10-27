@@ -28,7 +28,7 @@ export const PERMISSION_SECTIONS: { title: string; codes: { code: string; label:
   },
 ];
 
-export type CheckboxState = { checked: boolean; disabled: boolean; reason: string | null };
+type CheckboxState = { checked: boolean; disabled: boolean; reason: string | null };
 
 /**
  * One checkbox, by the server's own rules (ADR 0003), so the screen never

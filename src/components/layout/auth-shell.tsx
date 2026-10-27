@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-export function Brand() {
+function Brand() {
   return (
     <Link href="/" className="inline-flex items-center gap-2 text-lg font-semibold tracking-tight">
       <span aria-hidden className="size-3 rounded-full bg-accent ring-2 ring-primary" />

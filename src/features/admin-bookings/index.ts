@@ -6,4 +6,3 @@ export { Schedule } from './components/schedule';
 export { ResolutionQueue } from './components/resolution-queue';
 export { adminBookingKeys } from './keys';
 export type { AdminBooking } from './schemas';
-export { staffActions, type StaffAction } from './staff-actions';

@@ -14,7 +14,7 @@ export class ApiError extends Error {
 type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 type Params = Record<string, string | number | boolean | undefined>;
 
-export type RequestOptions = {
+type RequestOptions = {
   params?: Params;
   body?: unknown;
   /** Skip the refresh-on-401 retry — for login, refresh, and other auth calls. */

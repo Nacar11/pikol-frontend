@@ -2,15 +2,13 @@ import { z } from 'zod';
 
 /** A group as the backend's GroupRef carries it (ADR 0003). */
 export const GroupKindSchema = z.enum(['CUSTOMER', 'MASTER', 'STAFF']);
-export type GroupKind = z.infer<typeof GroupKindSchema>;
 
-export const GroupRefSchema = z.object({
+const GroupRefSchema = z.object({
   id: z.number(),
   name: z.string(),
   kind: GroupKindSchema,
   venue_id: z.number().nullable(),
 });
-export type GroupRef = z.infer<typeof GroupRefSchema>;
 
 /** Mirrors the backend's UserOut — snake_case, exactly. There is no role:
  * what someone may do is their groups, and the UI gates on permissions. */

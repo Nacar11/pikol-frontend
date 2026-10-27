@@ -111,7 +111,7 @@ export function priceLabel(court: GridCourt): string {
   return `${same ? '' : 'from '}${formatPeso(low)} / hr`;
 }
 
-export type DayKpis = {
+type DayKpis = {
   bookedHours: number;
   bookableHours: number;
   /** 0–100, rounded. */

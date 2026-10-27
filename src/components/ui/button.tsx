@@ -22,7 +22,7 @@ const buttonVariants = cva(
   },
 );
 
-export type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> &
+type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> &
   VariantProps<typeof buttonVariants> & { loading?: boolean };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(

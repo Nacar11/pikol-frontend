@@ -18,5 +18,3 @@ export const CourtSchema = z.object({
 });
 export type Court = z.infer<typeof CourtSchema>;
 export const CourtPageSchema = pageSchema(CourtSchema);
-
-export const VenuePageSchema = pageSchema(VenueSchema);

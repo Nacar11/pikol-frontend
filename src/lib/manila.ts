@@ -3,7 +3,7 @@
  * zone (spec §8.2), and a "day" is a Manila calendar day. Days travel as
  * `YYYY-MM-DD` strings so no zone can shift them.
  */
-export const MANILA = 'Asia/Manila';
+const MANILA = 'Asia/Manila';
 
 const DAY_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
 

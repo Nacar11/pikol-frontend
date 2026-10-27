@@ -1,6 +1,6 @@
 import type { AdminBooking } from './schemas';
 
-export type StaffAction = 'markPaid' | 'outcome' | 'cancel' | 'reopen';
+type StaffAction = 'markPaid' | 'outcome' | 'cancel' | 'reopen';
 
 /** Which actions the detail offers (spec §5.2). One table instead of conditions
  * scattered through JSX. A convenience only: the server re-checks every guard,

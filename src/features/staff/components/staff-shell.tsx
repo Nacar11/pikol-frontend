@@ -10,7 +10,7 @@ import { SECTION_LABELS, visibleSections } from '../nav-links';
 import { useStaffVenue } from '../use-staff-venue';
 import { VenueSwitcher } from './venue-switcher';
 
-export const SIDEBAR_STORAGE_KEY = 'pikol:staff_sidebar';
+const SIDEBAR_STORAGE_KEY = 'pikol:staff_sidebar';
 
 function isActive(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);

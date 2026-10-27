@@ -17,7 +17,8 @@
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"tests/**/*.{ts,tsx}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"tests/**/*.{ts,tsx}\"",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "deadcode": "knip"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -46,6 +47,7 @@
     "eslint": "^8.57.1",
     "eslint-config-next": "^15.5.28",
     "jsdom": "^25.0.1",
+    "knip": "^5.88.1",
     "postcss": "^8.5.31",
     "prettier": "^3.9.10",
     "prettier-plugin-tailwindcss": "^0.8.1",

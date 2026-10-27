@@ -1,4 +1,4 @@
-export type LandingPath = '/staff/schedule' | '/customer-app';
+type LandingPath = '/staff/schedule' | '/customer-app';
 
 /** Where a signed-in user starts (spec §8, ADR 0003): staff to today's
  * schedule; everyone else to the page that points them at the mobile app —
