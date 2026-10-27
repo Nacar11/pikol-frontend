@@ -6,6 +6,7 @@ import { adminBookingKeys, adminBookingsApi, type AdminBooking } from '@/feature
 import { availabilityKeys } from '@/features/availability';
 import { useAuth } from '@/features/auth';
 import { catalogKeys } from '@/features/catalog';
+import { staffKeys } from '@/features/staff';
 import { setupApi } from '../api';
 import { setupKeys } from '../keys';
 import type {
@@ -31,7 +32,8 @@ function useInvalidateVenues() {
   const qc = useQueryClient();
   return () => {
     void qc.invalidateQueries({ queryKey: setupKeys.venues() });
-    void qc.invalidateQueries({ queryKey: catalogKeys.venues() });
+    // The sidebar's venue switcher reads the caller's own venues.
+    void qc.invalidateQueries({ queryKey: staffKeys.myVenues() });
   };
 }
 

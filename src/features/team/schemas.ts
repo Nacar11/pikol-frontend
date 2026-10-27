@@ -6,19 +6,14 @@ export { UserSchema, type User };
 export const UserPageSchema = pageSchema(UserSchema);
 export type UserPage = z.infer<typeof UserPageSchema>;
 
-/** The manager's invite (`POST /admin/venue-staff`). Role and venue are not
- * fields of this type: the server fixes both (spec §6.4). */
-export type StaffInvite = {
+/** An invitation into one group (ADR 0003). There is no venue or role: the
+ * venue is the group's, and the server checks the caller may fill it. */
+export type Invite = {
   email: string;
   first_name: string;
   last_name: string;
   mobile?: string;
-};
-
-/** The owner's invite (`POST /admin/users`), where choosing is legitimate. */
-export type AnyInvite = StaffInvite & {
-  role: 'VENUE_MANAGER' | 'VENUE_STAFF';
-  venue_id: number;
+  group_id: number;
 };
 
 /** A person's staff groups at the venue in view — the API already filters

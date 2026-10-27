@@ -1,12 +1,5 @@
 import { ApiClient, apiClient } from '@/lib/api-client';
-import {
-  UserPageSchema,
-  UserSchema,
-  type AnyInvite,
-  type StaffInvite,
-  type User,
-  type UserPage,
-} from './schemas';
+import { UserPageSchema, UserSchema, type Invite, type User, type UserPage } from './schemas';
 
 const PAGE_SIZE = 20;
 
@@ -17,27 +10,20 @@ export const teamApi = {
       .then((r) => UserPageSchema.parse(r));
   },
 
-  /** The body is exactly the typed fields: nothing is spread in. */
-  inviteStaff(req: StaffInvite, client: ApiClient = apiClient()): Promise<User> {
-    const body: StaffInvite = {
+  /** A staff group at the active venue (`POST /admin/venue-staff`), or — for
+   * the owner — any group (`POST /admin/users`). The body is exactly the
+   * typed fields: nothing is spread in. */
+  invite(req: Invite, asOwner: boolean, client: ApiClient = apiClient()): Promise<User> {
+    const body: Invite = {
       email: req.email,
       first_name: req.first_name,
       last_name: req.last_name,
       ...(req.mobile ? { mobile: req.mobile } : {}),
+      group_id: req.group_id,
     };
-    return client.post<unknown>('/admin/venue-staff', body).then((r) => UserSchema.parse(r));
-  },
-
-  inviteAny(req: AnyInvite, client: ApiClient = apiClient()): Promise<User> {
-    const body: AnyInvite = {
-      email: req.email,
-      first_name: req.first_name,
-      last_name: req.last_name,
-      ...(req.mobile ? { mobile: req.mobile } : {}),
-      role: req.role,
-      venue_id: req.venue_id,
-    };
-    return client.post<unknown>('/admin/users', body).then((r) => UserSchema.parse(r));
+    return client
+      .post<unknown>(asOwner ? '/admin/users' : '/admin/venue-staff', body)
+      .then((r) => UserSchema.parse(r));
   },
 
   update(id: number, body: { is_active: boolean }, client: ApiClient = apiClient()): Promise<User> {

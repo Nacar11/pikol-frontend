@@ -45,7 +45,7 @@ function Team() {
 
   return (
     <section className="space-y-4">
-      <h1 className="text-xl font-semibold">Staff</h1>
+      <h1 className="text-xl font-semibold">Staff accounts</h1>
       <InviteForm />
       {/* List level: a refetch can drop the row this outcome is about. */}
       {outcome && <Alert tone={outcome.tone}>{outcome.message}</Alert>}

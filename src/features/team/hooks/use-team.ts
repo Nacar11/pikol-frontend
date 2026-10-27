@@ -4,7 +4,7 @@ import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-q
 import { useAuth } from '@/features/auth';
 import { teamApi } from '../api';
 import { teamKeys } from '../keys';
-import type { AnyInvite, StaffInvite } from '../schemas';
+import type { Invite } from '../schemas';
 
 /** The team, a page at a time. */
 export function useTeam() {
@@ -26,18 +26,10 @@ function useInvalidateTeam() {
   };
 }
 
-export function useInviteStaff() {
+export function useInvite() {
   const invalidate = useInvalidateTeam();
   return useMutation({
-    mutationFn: (body: StaffInvite) => teamApi.inviteStaff(body),
-    onSuccess: invalidate,
-  });
-}
-
-export function useInviteAny() {
-  const invalidate = useInvalidateTeam();
-  return useMutation({
-    mutationFn: (body: AnyInvite) => teamApi.inviteAny(body),
+    mutationFn: (v: { invite: Invite; asOwner: boolean }) => teamApi.invite(v.invite, v.asOwner),
     onSuccess: invalidate,
   });
 }

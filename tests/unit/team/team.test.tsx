@@ -1,8 +1,9 @@
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { toast } from 'sonner';
 import { authApi } from '@/features/auth/api';
+import { staffApi } from '@/features/staff/api';
 import { TeamList } from '@/features/team';
 import { ApiError } from '@/lib/api-client';
 import { renderWithAuth } from '../auth/render';
@@ -19,6 +20,11 @@ vi.mock('@/lib/api-client', async (orig) => ({
   apiClient: () => http,
 }));
 vi.mock('@/features/auth/api', () => ({ authApi: { permissions: vi.fn() } }));
+vi.mock('@/features/staff/api', () => ({ staffApi: { myVenues: vi.fn() } }));
+vi.mock('next/navigation', async () => ({
+  ...(await import('../auth/render')).navigationMock,
+  usePathname: () => '/staff/users',
+}));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 type U = {
@@ -52,23 +58,32 @@ const person = (id: number, over: Partial<U> = {}): U => ({
 });
 
 let users: U[];
-const venues = {
-  data: [
-    { id: 1, name: 'Riverside', address: null, is_active: true },
-    { id: 2, name: 'Lakeside', address: null, is_active: true },
-  ],
+const groupRow = (id: number, name: string, kind: 'MASTER' | 'STAFF') => ({
+  id,
+  name,
+  kind,
+  venue_id: 1,
+  member_count: 0,
+  permissions: [],
+  read_only: kind === 'MASTER',
+});
+const venueGroups = {
+  data: [groupRow(10, 'Venue master', 'MASTER'), groupRow(11, 'Front desk', 'STAFF')],
   total: 2,
   page: 1,
-  limit: 100,
+  limit: 200,
   has_more: false,
 };
 
 beforeEach(() => {
   vi.clearAllMocks();
   users = [];
+  vi.mocked(staffApi.myVenues).mockResolvedValue([
+    { venue_id: 1, name: 'Riverside', is_master: true, groups: ['Venue master'] },
+  ]);
   // Reads always reflect the current server-side list.
   http.get.mockImplementation((path: string, opts?: { params?: { page?: number } }) => {
-    if (path === '/venues') return Promise.resolve(venues);
+    if (path === '/admin/user-groups') return Promise.resolve(venueGroups);
     const pageNo = opts?.params?.page ?? 1;
     const size = 4;
     const slice = users.slice((pageNo - 1) * size, pageNo * size);
@@ -82,7 +97,7 @@ beforeEach(() => {
   });
 });
 
-const me = { id: 1, venue_id: 1, role: 'VENUE_MANAGER' } as never;
+const me = { id: 1 } as never;
 function setup(permissions: string[], user = me) {
   vi.mocked(authApi.permissions).mockResolvedValue(permissions as never);
   renderWithAuth(<TeamList />, { status: 'authenticated', user });
@@ -129,7 +144,7 @@ describe('TeamList', () => {
     expect(screen.queryByRole('button', { name: 'Load more' })).not.toBeInTheDocument();
   });
 
-  it('a manager invite posts exactly email, first_name, last_name to /admin/venue-staff', async () => {
+  it('a manager invites into a staff group at /admin/venue-staff — no venue, no role', async () => {
     const u = userEvent.setup();
     users = [person(1, { groups: [MASTERS] })];
     http.post.mockImplementation((_p: string, body: { email: string }) => {
@@ -137,15 +152,18 @@ describe('TeamList', () => {
       return Promise.resolve(users[users.length - 1]);
     });
     setup(MANAGER);
-    expect(await screen.findByLabelText('Email')).toBeInTheDocument();
-    expect(screen.queryByLabelText('Role')).not.toBeInTheDocument();
-    expect(screen.queryByLabelText('Venue')).not.toBeInTheDocument();
     await fillInvite(u);
+    const group = screen.getByLabelText('Group at Riverside');
+    // A manager is never offered the master group.
+    await waitFor(() => expect(within(group).getAllByRole('option')).toHaveLength(2));
+    expect(within(group).queryByRole('option', { name: 'Venue master' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Send invitation' })).toBeDisabled();
+    await u.selectOptions(group, 'Front desk');
     await u.click(screen.getByRole('button', { name: 'Send invitation' }));
     await waitFor(() => expect(http.post).toHaveBeenCalledTimes(1));
     const [path, body] = http.post.mock.calls[0] as [string, Record<string, unknown>];
     expect(path).toBe('/admin/venue-staff');
-    expect(Object.keys(body).sort()).toEqual(['email', 'first_name', 'last_name']);
+    expect(body).toEqual({ email: 'new@x.ph', first_name: 'Ana', last_name: 'Cruz', group_id: 11 });
     expect(toast.success).toHaveBeenCalledWith('Invitation sent to new@x.ph');
     expect(await screen.findByText('First9 Last9')).toBeInTheDocument();
   });
@@ -155,42 +173,50 @@ describe('TeamList', () => {
     http.post.mockResolvedValue(person(9));
     setup(MANAGER);
     await fillInvite(u, '09171234567');
+    await u.selectOptions(screen.getByLabelText('Group at Riverside'), 'Front desk');
     await u.click(screen.getByRole('button', { name: 'Send invitation' }));
     await waitFor(() => expect(http.post).toHaveBeenCalled());
     const body = http.post.mock.calls[0]![1] as Record<string, unknown>;
-    expect(Object.keys(body).sort()).toEqual(['email', 'first_name', 'last_name', 'mobile']);
+    expect(Object.keys(body).sort()).toEqual([
+      'email',
+      'first_name',
+      'group_id',
+      'last_name',
+      'mobile',
+    ]);
   });
 
-  it('an owner invite posts role and venue_id to /admin/users', async () => {
+  it('the owner may invite a venue master, through /admin/users', async () => {
     const u = userEvent.setup();
-    http.post.mockResolvedValue(person(9, { groups: [{ ...MASTERS, venue_id: 2 }] }));
-    setup(OWNER, { id: 1, venue_id: null, role: 'SUPER_ADMIN' } as never);
+    http.post.mockResolvedValue(person(9, { groups: [MASTERS] }));
+    setup(OWNER);
     await fillInvite(u);
-    await u.selectOptions(screen.getByLabelText('Role'), 'VENUE_MANAGER');
-    expect(screen.getByRole('button', { name: 'Send invitation' })).toBeDisabled();
-    await u.selectOptions(await screen.findByLabelText('Venue'), 'Lakeside');
+    await u.selectOptions(screen.getByLabelText('Group at Riverside'), 'Venue master');
     await u.click(screen.getByRole('button', { name: 'Send invitation' }));
     await waitFor(() => expect(http.post).toHaveBeenCalledTimes(1));
     const [path, body] = http.post.mock.calls[0] as [string, Record<string, unknown>];
     expect(path).toBe('/admin/users');
-    expect(body).toEqual({
-      email: 'new@x.ph',
-      first_name: 'Ana',
-      last_name: 'Cruz',
-      role: 'VENUE_MANAGER',
-      venue_id: 2,
-    });
+    expect(body).toEqual({ email: 'new@x.ph', first_name: 'Ana', last_name: 'Cruz', group_id: 10 });
   });
 
-  it('renders the server detail when the email is taken (409)', async () => {
+  it('points an already-registered email at Venue staff', async () => {
     const u = userEvent.setup();
     http.post.mockRejectedValue(
-      new ApiError(409, { detail: 'That email is already registered.', code: 'EMAIL_TAKEN' }),
+      new ApiError(409, {
+        detail: 'Already registered — add them from Venue staff.',
+        code: 'EMAIL_EXISTS',
+      }),
     );
     setup(MANAGER);
     await fillInvite(u);
+    await u.selectOptions(screen.getByLabelText('Group at Riverside'), 'Front desk');
     await u.click(screen.getByRole('button', { name: 'Send invitation' }));
-    expect(await screen.findByText('That email is already registered.')).toBeInTheDocument();
+
+    expect(await screen.findByRole('link', { name: 'add them from Venue staff' })).toHaveAttribute(
+      'href',
+      '/staff/venue-staff',
+    );
+    expect(screen.getByLabelText('Email')).toHaveAttribute('aria-invalid', 'true');
     expect(toast.success).not.toHaveBeenCalled();
   });
 

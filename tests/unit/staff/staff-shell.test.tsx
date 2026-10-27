@@ -58,7 +58,7 @@ describe('StaffShell', () => {
     expect(within(nav).getByText('Operations')).toBeInTheDocument();
     expect(within(nav).queryByText('Setup')).not.toBeInTheDocument();
     expect(within(nav).queryByText('Masters')).not.toBeInTheDocument();
-    for (const hidden of ['Courts', 'Venue staff', 'Staff', 'Venues', 'Parameters']) {
+    for (const hidden of ['Courts', 'Venue staff', 'Staff accounts', 'Venues', 'Parameters']) {
       expect(within(nav).queryByRole('link', { name: hidden })).not.toBeInTheDocument();
     }
   });
@@ -82,7 +82,7 @@ describe('StaffShell', () => {
       'Closures',
       'Courts',
       'Venue staff',
-      'Staff',
+      'Staff accounts',
       'Venues',
       'Parameters',
       'User groups',

@@ -66,7 +66,7 @@ export const STAFF_LINKS: StaffLink[] = [
   },
   {
     href: '/staff/users',
-    label: 'Staff',
+    label: 'Staff accounts',
     permission: 'USER:Manage',
     section: 'setup',
     icon: Users,
