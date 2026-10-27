@@ -32,14 +32,17 @@ ESLint enforces the barrel rule and forbids inline `queryKey` arrays.
 
 ## Slices and routes
 
-**The web is the staff console only** (ADR 0003). Customers book in a mobile
-app; the player routes were removed and the backend's customer routes stay
-for that app. A signed-in non-staff user lands on `/customer-app`.
+The web is the **staff console** plus a **customer booking demo** under
+`/book` — a stand-in for the mobile app, on the same `/checkouts/me` API the
+app will use, so anything found there is a real bug (ADR 0004, and
+`../docs/plans/2026-10-28-customer-booking-demo.md`). It is a test page for
+the app's flow, kept in the console's black-and-white system, not a storefront.
 
 | Slice | Owns |
 |---|---|
 | `auth` | sign-in and recovery screens, `usePermissions`, `landingPath`, the user/group schemas |
-| `catalog` | the per-venue court list (`GET /venues/{id}/courts`) |
+| `catalog` | the venue list (`GET /venues`, `useVenues`) and the per-venue court list (`GET /venues/{id}/courts`) |
+| `booking` | the customer demo: `picks.ts` (pure — toggle, merge into items, the server's half-up fee), checkout API and hooks, `CustomerGate`, `CustomerShell`, venue cards, the courts × hours grid and pick bar, the hold page, the result page (polls 3 s for 2 min, then "Check again"), My bookings |
 | `availability` | the day availability read and the slot-selection reducer |
 | `bookings` | the booking schema and `StatusBadge`, reused by the console |
 | `admin-bookings` | the Schedule (header, two-week strip, court grid, day-at-a-glance), the occupancy read, booking actions, the resolution queue |
@@ -50,7 +53,10 @@ for that app. A signed-in non-staff user lands on `/customer-app`.
 | `parameters` | the owner's business-parameters screen |
 
 Routes: `/login`, `/forgot-password`, `/reset-password`, `/verify-email`,
-`/accept-invite`, `/customer-app`, and the staff console under `/staff`
+`/accept-invite`; the customer pages `/book` (venue cards), `/book/[venueId]?date=`
+(grid), `/book/checkout/[id]` (hold page), `/book/result/[id]` (result — also
+Maya's redirect target for success, failure and cancel) and `/book/mine`; and
+the staff console under `/staff`
 (every page gated on a permission code, never a group name): `/staff`
 redirects to `/staff/schedule` in `next.config.ts` — never with a page calling
 `redirect()`, which crashed the App Router on client navigation; the others are
@@ -87,7 +93,13 @@ when it changes, permissions included.
   for a closed court-hour).
 - **All times render in Asia/Manila**, never browser-local (spec §8.2).
 - **Slot selection is never optimistic** — a 409 on a busy evening is an
-  expected outcome (spec §8.2). Tap → server → then held.
+  expected outcome (spec §8.2). Tap → server → then held. On the customer
+  grid, a refused Pay now refetches the day and drops the taken picks.
+- **A checkout's status is the server's, never the redirect's.** The result
+  page shows what `GET /checkouts/me/{id}` says; Maya sending the browser to
+  the "failure" URL proves nothing (ADR 0004).
+- **"Continue to Maya" may be pressed many times** — the server returns the
+  same Maya session; never cache or build the URL client-side.
 
 ## Auth
 
@@ -98,7 +110,10 @@ when it changes, permissions included.
   concurrent 401s into one refresh call. Never call `authApi.refresh` from
   anywhere but `AuthProvider`.
 - Login returns tokens only; the provider then loads `GET /users/me`.
-- Landing: `BOOKING:ReadAny` → `/staff`, otherwise `/customer-app`.
+- Landing (`landingPath(permissions, isCustomer)`): a customer → `/book`,
+  even one who is also staff; staff who are not customers → `/staff/schedule`;
+  anyone else → `/book`, where `CustomerGate` says the account cannot book.
+  `StaffOnly` sends non-staff to `/book`.
 
 ## Env
 
@@ -141,7 +156,14 @@ exists purely as a test seam is tagged `/** @internal */`.
 starts the backend and a production build, and runs `e2e/*.spec.ts`. Each
 test signs in through the API with its own refresh token (`e2e/fixtures.ts`):
 tokens rotate, and a shared one trips replay detection. Seeded logins:
-`owner.e2e@example.com` / `desk.e2e@example.com`, password `E2e-password-1`.
+`owner.e2e@example.com` / `desk.e2e@example.com` and the customers
+`customer1.e2e@example.com` / `customer2.e2e@example.com` (`customerPage`,
+`rivalPage` — the rival in its own browser context), password
+`E2e-password-1`. The e2e backend runs with `MOCK_CHECKOUT_ENABLED=true`;
+`e2e/booking.spec.ts` pays on the mock Maya page and, for the late-payment
+specs, sets `hold_duration_minutes` to 1 through `setParameter` and puts it
+back. For a local demo, seed customers with
+`uv run python -m src.devtools.demo_seed --customers 3` in the backend.
 
 ## Docs live in the parent repo
 
