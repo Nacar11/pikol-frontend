@@ -4,9 +4,11 @@ import { Search, UserPlus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { PageHeader } from '@/components/layout/page-header';
 import { Alert } from '@/components/ui/alert';
+import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PageLoading } from '@/components/ui/page-loading';
+import { Pill } from '@/components/ui/pill';
 import { useAuth } from '@/features/auth';
 import { StaffGate } from '@/features/staff';
 import { cn } from '@/lib/cn';
@@ -34,9 +36,7 @@ function statusOf(u: User): Status {
   return u.is_active ? 'Active' : 'Deactivated';
 }
 
-function initials(u: User): string {
-  return `${u.first_name[0] ?? ''}${u.last_name[0] ?? ''}`.toUpperCase();
-}
+const STATUS_TONE = { Active: 'solid', Invited: 'outline', Deactivated: 'dashed' } as const;
 
 function Team() {
   const { user: me } = useAuth();
@@ -191,12 +191,7 @@ function Team() {
                   <tr key={u.id}>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <span
-                          aria-hidden
-                          className="inline-flex size-10 shrink-0 items-center justify-center rounded border border-border text-xs font-semibold"
-                        >
-                          {initials(u)}
-                        </span>
+                        <Avatar first={u.first_name} last={u.last_name} />
                         <div className="min-w-0">
                           <p className="truncate font-medium">{name}</p>
                           <p className="truncate text-muted-foreground">{u.email}</p>
@@ -209,7 +204,7 @@ function Team() {
                     </td>
                     <td className="hidden px-4 py-3 md:table-cell">{groups}</td>
                     <td className="hidden px-4 py-3 sm:table-cell">
-                      <StatusPill status={status} />
+                      <Pill tone={STATUS_TONE[status]}>{status}</Pill>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap justify-end gap-2">
@@ -259,21 +254,5 @@ function Team() {
         </Button>
       )}
     </section>
-  );
-}
-
-/** Status is the label; the outline only separates it from the row. */
-function StatusPill({ status }: { status: Status }) {
-  return (
-    <span
-      className={cn(
-        'inline-flex rounded px-2 py-0.5 text-xs font-medium',
-        status === 'Active' && 'bg-muted',
-        status === 'Invited' && 'border border-input',
-        status === 'Deactivated' && 'border border-dashed border-input text-muted-foreground',
-      )}
-    >
-      {status}
-    </span>
   );
 }

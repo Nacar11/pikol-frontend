@@ -3,9 +3,11 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Alert } from '@/components/ui/alert';
+import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PageLoading } from '@/components/ui/page-loading';
+import { Pill } from '@/components/ui/pill';
 import { errorMessage } from '@/lib/api-error';
 import { useGroupMutations, useMembers } from '../hooks/use-groups';
 import type { Group, Member } from '../schemas';
@@ -103,31 +105,17 @@ function MemberRow({
   const { removeMember } = useGroupMutations();
   const [confirming, setConfirming] = useState(false);
   const name = `${member.first_name} ${member.last_name}`;
-  const initials = `${member.first_name[0] ?? ''}${member.last_name[0] ?? ''}`.toUpperCase();
   return (
     <li className="flex flex-wrap items-center gap-3 px-4 py-3">
-      <span
-        aria-hidden
-        className="inline-flex size-10 shrink-0 items-center justify-center rounded border border-border text-xs font-semibold"
-      >
-        {initials}
-      </span>
+      <Avatar first={member.first_name} last={member.last_name} />
       <span className="min-w-0 flex-1">
         <span className="block truncate text-sm font-medium">{name}</span>
         <span className="block truncate text-sm text-muted-foreground">{member.email}</span>
       </span>
       {(member.is_customer || member.pending_invite) && (
         <span className="flex flex-wrap gap-1.5">
-          {member.pending_invite && (
-            <span className="rounded border border-input px-2 py-0.5 text-xs font-medium">
-              Invite pending
-            </span>
-          )}
-          {member.is_customer && (
-            <span className="rounded bg-muted px-2 py-0.5 text-xs font-medium">
-              Also a customer
-            </span>
-          )}
+          {member.pending_invite && <Pill tone="outline">Invite pending</Pill>}
+          {member.is_customer && <Pill>Also a customer</Pill>}
         </span>
       )}
       {!readOnly &&

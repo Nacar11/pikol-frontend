@@ -6,6 +6,8 @@ import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PageLoading } from '@/components/ui/page-loading';
+import { Pill } from '@/components/ui/pill';
+import { SectionLabel } from '@/components/ui/section-label';
 import { StaffGate } from '@/features/staff';
 import { cn } from '@/lib/cn';
 import { errorMessage } from '@/lib/api-error';
@@ -85,19 +87,15 @@ function Parameters() {
       ) : (
         sections.map((s, n) => (
           <section key={s.id} aria-labelledby={`params-${s.id}`} className="space-y-3">
-            <div className="flex items-baseline justify-between gap-2 border-b border-border pb-2">
-              <h2 id={`params-${s.id}`} className="flex items-baseline gap-2">
-                <span aria-hidden className="text-sm font-semibold tabular-nums">
-                  {String(n + 1).padStart(2, '0')}
-                </span>
-                <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                  {s.title}
-                </span>
-              </h2>
-              <span className="text-xs tabular-nums text-muted-foreground">
-                {s.rows.length} {s.rows.length === 1 ? 'setting' : 'settings'}
-              </span>
-            </div>
+            <SectionLabel
+              n={n + 1}
+              as="h2"
+              id={`params-${s.id}`}
+              aside={`${s.rows.length} ${s.rows.length === 1 ? 'setting' : 'settings'}`}
+              className="border-b border-border pb-2"
+            >
+              {s.title}
+            </SectionLabel>
             <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {s.rows.map((p) => (
                 <ParameterCard key={p.key} parameter={p} />
@@ -148,11 +146,7 @@ function ParameterCard({ parameter }: { parameter: Parameter }) {
               <p className="truncate font-mono text-xs text-muted-foreground">{parameter.key}</p>
             )}
           </div>
-          {dirty && (
-            <span className="shrink-0 rounded border border-input px-2 py-0.5 text-xs font-medium">
-              Unsaved
-            </span>
-          )}
+          {dirty && <Pill tone="outline">Unsaved</Pill>}
         </div>
         <p className="text-3xl font-semibold tabular-nums tracking-tight">
           <Shown parameter={parameter} />

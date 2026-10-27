@@ -3,6 +3,7 @@
 import { useCallback, useState } from 'react';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { usePermissions } from '@/features/auth';
 import { errorMessage } from '@/lib/api-error';
 import { usePermissionCatalogue } from '../hooks/use-groups';
@@ -105,10 +106,7 @@ export function GroupWorkspace({
             }}
           />
         ) : (
-          <div
-            aria-hidden
-            className="h-72 animate-pulse rounded-md bg-muted motion-reduce:animate-none"
-          />
+          <Skeleton />
         )}
       </div>
     </div>

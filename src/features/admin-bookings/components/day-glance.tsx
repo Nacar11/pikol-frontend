@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { Alert } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useAvailability } from '@/features/availability';
 import { cn } from '@/lib/cn';
 import { errorMessage } from '@/lib/api-error';
@@ -62,10 +63,7 @@ export function DayGlance({ venueId, date }: { venueId: number; date: string }) 
           />
         </dl>
       ) : (
-        <div
-          aria-hidden
-          className="h-44 animate-pulse rounded-md bg-muted motion-reduce:animate-none"
-        />
+        <Skeleton className="h-44" />
       )}
 
       <section>
@@ -76,10 +74,7 @@ export function DayGlance({ venueId, date }: { venueId: number; date: string }) 
         {bookings.error && !bookings.data ? (
           <Alert tone="error">{errorMessage(bookings.error)}</Alert>
         ) : bookings.isPending ? (
-          <div
-            aria-hidden
-            className="mt-3 h-32 animate-pulse rounded-md bg-muted motion-reduce:animate-none"
-          />
+          <Skeleton className="mt-3 h-32" />
         ) : rows.length === 0 ? (
           <p className="py-6 text-sm text-muted-foreground">No bookings on this day.</p>
         ) : (

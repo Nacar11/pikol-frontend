@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { PageHeader } from '@/components/layout/page-header';
 import { Alert } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
 import { StaffGate, useStaffVenue } from '@/features/staff';
 import { errorMessage } from '@/lib/api-error';
 import { useGroups } from '../hooks/use-groups';
@@ -48,10 +49,7 @@ function UserGroupsScreen() {
       {error && !customers.data ? (
         <Alert tone="error">{errorMessage(error)}</Alert>
       ) : !customers.data || !masters.data ? (
-        <div
-          aria-hidden
-          className="h-72 animate-pulse rounded-md bg-muted motion-reduce:animate-none"
-        />
+        <Skeleton />
       ) : (
         <GroupWorkspace
           groups={shown}

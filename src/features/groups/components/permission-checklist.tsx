@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { SectionLabel } from '@/components/ui/section-label';
 import { cn } from '@/lib/cn';
 import { errorMessage } from '@/lib/api-error';
 import { useGroupMutations } from '../hooks/use-groups';
@@ -85,19 +86,11 @@ export function PermissionChecklist({
           return (
             <fieldset key={section.title} className="space-y-3">
               <legend className="sr-only">{section.title}</legend>
-              <div aria-hidden className="flex items-baseline justify-between gap-2">
-                <span className="flex items-baseline gap-2">
-                  <span className="text-sm font-semibold tabular-nums">
-                    {String(n + 1).padStart(2, '0')}
-                  </span>
-                  <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                    {section.title}
-                  </span>
-                </span>
-                <span className="text-xs tabular-nums text-muted-foreground">
-                  {on} of {section.codes.length}
-                </span>
-              </div>
+              <span aria-hidden className="block">
+                <SectionLabel n={n + 1} aside={`${on} of ${section.codes.length}`}>
+                  {section.title}
+                </SectionLabel>
+              </span>
               <ul className="grid gap-2 sm:grid-cols-2">
                 {section.codes.map(({ code, label }) => {
                   const state = checkboxState(code, ctx);

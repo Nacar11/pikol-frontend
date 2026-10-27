@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { StatStrip, type Stat } from '@/components/ui/stat-strip';
 import { cn } from '@/lib/cn';
 import { errorMessage } from '@/lib/api-error';
 import { useGroupMutations } from '../hooks/use-groups';
@@ -54,7 +55,7 @@ export function GroupDetail({
   const blocked = deleteBlocked(group, readOnly);
   const active = tabs.includes(tab) ? tab : tabs[0]!;
   const grantable = catalogue.filter((p) => !p.owner_only).length;
-  const stats: { label: string; value: string }[] = [
+  const stats: Stat[] = [
     { label: 'Members', value: String(group.member_count) },
     ...(group.kind === 'CUSTOMER'
       ? []
@@ -89,24 +90,7 @@ export function GroupDetail({
         />
       </div>
 
-      <dl
-        className={cn(
-          'grid border-y border-border',
-          stats.length === 3 ? 'grid-cols-3' : 'grid-cols-2',
-        )}
-      >
-        {stats.map((s, i) => (
-          <div
-            key={s.label}
-            className={cn('min-w-0 space-y-1 p-3 sm:p-4', i > 0 && 'border-l border-border')}
-          >
-            <dt className="truncate text-xs font-medium uppercase tracking-widest text-muted-foreground">
-              {s.label}
-            </dt>
-            <dd className="text-base font-semibold tabular-nums sm:text-lg">{s.value}</dd>
-          </div>
-        ))}
-      </dl>
+      <StatStrip items={stats} />
 
       <div role="tablist" aria-label="Group" className="flex gap-6 border-b border-border px-5">
         {tabs.map((t, i) => {

@@ -3,9 +3,11 @@
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
 import { PageHeader } from '@/components/layout/page-header';
+import { AddTile } from '@/components/ui/add-tile';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
 import { usePermissions } from '@/features/auth';
 import { StaffGate, useStaffVenue } from '@/features/staff';
 import { errorMessage } from '@/lib/api-error';
@@ -54,10 +56,7 @@ function VenueStaffScreen() {
       {groups.error && !groups.data ? (
         <Alert tone="error">{errorMessage(groups.error)}</Alert>
       ) : !groups.data || venueId === null ? (
-        <div
-          aria-hidden
-          className="h-72 animate-pulse rounded-lg bg-muted motion-reduce:animate-none"
-        />
+        <Skeleton />
       ) : (
         <GroupWorkspace
           groups={list}
@@ -110,24 +109,12 @@ function NewGroupTile({
 
   if (!open) {
     return (
-      <button
-        type="button"
+      <AddTile
+        size="sm"
+        title="New group"
+        hint="One per role, with its own permissions"
         onClick={() => onOpen(true)}
-        className="flex w-full items-center gap-3 rounded-lg border border-dashed border-input p-4 text-left transition-colors duration-150 hover:bg-muted/60"
-      >
-        <span
-          aria-hidden
-          className="inline-flex size-9 shrink-0 items-center justify-center rounded border border-foreground"
-        >
-          <Plus className="size-4" />
-        </span>
-        <span className="min-w-0">
-          <span className="block text-sm font-semibold">New group</span>
-          <span className="block text-xs text-muted-foreground">
-            One per role, with its own permissions
-          </span>
-        </span>
-      </button>
+      />
     );
   }
   return (

@@ -5,10 +5,11 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { PageHeader } from '@/components/layout/page-header';
 import { Alert } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { PageLoading } from '@/components/ui/page-loading';
+import { Pill } from '@/components/ui/pill';
 import { usePermissions } from '@/features/auth';
 import type { Venue } from '@/features/catalog';
 import { StaffGate } from '@/features/staff';
@@ -20,9 +21,11 @@ import {
   useUpdateVenue,
   useVenueSummaries,
 } from '../hooks/use-setup';
-import type { VenueSummary } from '../schemas';
+import type { VenueCreate, VenueSummary } from '../schemas';
+import { AddCard, SetupCard } from './setup-card';
 
 const DAY_HOURS = 24;
+const ADD_HINT = 'Created with a Venue master and a Front desk group';
 
 export function VenueAdmin() {
   return (
@@ -33,7 +36,7 @@ export function VenueAdmin() {
 }
 
 function Venues() {
-  const permissions = usePermissions().data ?? [];
+  const canCourts = (usePermissions().data ?? []).includes('COURT:Manage');
   const { data, error } = useAdminVenues();
   const summaries = useVenueSummaries();
   const create = useCreateVenue();
@@ -50,11 +53,7 @@ function Venues() {
       <PageHeader
         section="Setup"
         title="Venues"
-        description={
-          data
-            ? `${active} active${inactive > 0 ? ` · ${inactive} inactive` : ''} · Each venue has its own courts, prices and staff`
-            : 'Each venue has its own courts, prices and staff'
-        }
+        description={`${data ? `${active} active${inactive > 0 ? ` · ${inactive} inactive` : ''} · ` : ''}Each venue has its own courts, prices and staff`}
         action={
           <Button onClick={() => setAdding(true)}>
             <Plus aria-hidden className="size-4" />
@@ -62,8 +61,14 @@ function Venues() {
           </Button>
         }
       />
-      {create.isError && <Alert tone="error">{errorMessage(create.error)}</Alert>}
-      {update.isError && <Alert tone="error">{errorMessage(update.error)}</Alert>}
+      {[create, update].map(
+        (m, i) =>
+          m.isError && (
+            <Alert key={i} tone="error">
+              {errorMessage(m.error)}
+            </Alert>
+          ),
+      )}
       {!data ? (
         error ? (
           <Alert tone="error">{errorMessage(error)}</Alert>
@@ -73,152 +78,104 @@ function Venues() {
       ) : (
         <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {venues.map((v) => (
-            <VenueCard
+            <SetupCard
               key={v.id}
-              venue={v}
-              summary={summaries.data?.find((s) => s.venue_id === v.id)}
-              canCourts={permissions.includes('COURT:Manage')}
-              editing={editingId === v.id}
-              onEdit={(on) => setEditingId(on ? v.id : null)}
-              onSave={(body) =>
-                update.mutate({ id: v.id, body }, { onSuccess: () => setEditingId(null) })
+              head={
+                <>
+                  <div className="flex items-start justify-between gap-2">
+                    <span
+                      aria-hidden
+                      className={cn(
+                        'inline-flex size-12 items-center justify-center rounded border border-foreground',
+                        !v.is_active && 'border-input text-muted-foreground',
+                      )}
+                    >
+                      <MapPin className="size-5" />
+                    </span>
+                    <Pill tone={v.is_active ? 'solid' : 'dashed'}>
+                      {v.is_active ? 'Active' : 'Inactive'}
+                    </Pill>
+                  </div>
+                  {editingId === v.id ? (
+                    <EditVenue
+                      venue={v}
+                      pending={update.isPending}
+                      onSave={(body) =>
+                        update.mutate({ id: v.id, body }, { onSuccess: () => setEditingId(null) })
+                      }
+                      onCancel={() => setEditingId(null)}
+                    />
+                  ) : (
+                    <div className="min-w-0 space-y-1">
+                      <h2 className="truncate text-xl font-semibold tracking-tight">{v.name}</h2>
+                      <p className="truncate text-sm text-muted-foreground">
+                        {v.address ?? 'No address'}
+                      </p>
+                    </div>
+                  )}
+                </>
               }
-              saving={update.isPending}
-              onToggleActive={() => update.mutate({ id: v.id, body: { is_active: !v.is_active } })}
+              stats={venueStats(
+                v,
+                summaries.data?.find((s) => s.venue_id === v.id),
+              )}
+              actions={
+                <>
+                  {canCourts && (
+                    <Link
+                      href={`/staff/courts?venue=${v.id}`}
+                      aria-label={`Courts at ${v.name}`}
+                      className={buttonVariants({ variant: 'secondary', size: 'sm' })}
+                    >
+                      Courts
+                    </Link>
+                  )}
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    aria-label={`Edit ${v.name}`}
+                    disabled={editingId === v.id}
+                    onClick={() => setEditingId(v.id)}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={update.isPending}
+                    aria-label={`${v.is_active ? 'Deactivate' : 'Activate'} ${v.name}`}
+                    onClick={() => update.mutate({ id: v.id, body: { is_active: !v.is_active } })}
+                  >
+                    {v.is_active ? 'Deactivate' : 'Activate'}
+                  </Button>
+                </>
+              }
             />
           ))}
-          <AddVenueTile
-            adding={adding}
-            onAdding={setAdding}
-            pending={create.isPending}
-            onCreate={(body) => create.mutate(body, { onSuccess: () => setAdding(false) })}
-          />
+          <AddCard title="Add venue" hint={ADD_HINT} open={adding} onOpen={() => setAdding(true)}>
+            <NewVenueForm
+              pending={create.isPending}
+              onCancel={() => setAdding(false)}
+              onCreate={(body) => create.mutate(body, { onSuccess: () => setAdding(false) })}
+            />
+          </AddCard>
         </ul>
       )}
     </section>
   );
 }
 
-function VenueCard({
-  venue,
-  summary,
-  canCourts,
-  editing,
-  onEdit,
-  onSave,
-  saving,
-  onToggleActive,
-}: {
-  venue: Venue;
-  summary: VenueSummary | undefined;
-  canCourts: boolean;
-  editing: boolean;
-  onEdit: (on: boolean) => void;
-  onSave: (body: { name: string; address: string | null }) => void;
-  saving: boolean;
-  onToggleActive: () => void;
-}) {
-  const activeCourts = summary?.active_courts;
+function venueStats(venue: Venue, summary: VenueSummary | undefined) {
+  const courts = summary?.active_courts;
   const booked = venue.is_active ? summary?.booked_hours : undefined;
-  const capacity = activeCourts === undefined ? undefined : activeCourts * DAY_HOURS;
-
-  return (
-    <li className="flex flex-col rounded-lg border border-border bg-surface">
-      <div className="space-y-4 p-5">
-        <div className="flex items-start justify-between gap-2">
-          <span
-            aria-hidden
-            className={cn(
-              'inline-flex size-12 items-center justify-center rounded border border-foreground',
-              !venue.is_active && 'border-input text-muted-foreground',
-            )}
-          >
-            <MapPin className="size-5" />
-          </span>
-          <span
-            className={cn(
-              'rounded px-2 py-0.5 text-xs font-medium',
-              venue.is_active ? 'bg-muted' : 'border border-dashed border-input',
-            )}
-          >
-            {venue.is_active ? 'Active' : 'Inactive'}
-          </span>
-        </div>
-        {editing ? (
-          <EditVenue
-            venue={venue}
-            pending={saving}
-            onSave={onSave}
-            onCancel={() => onEdit(false)}
-          />
-        ) : (
-          <div className="min-w-0 space-y-1">
-            <h2 className="truncate text-xl font-semibold tracking-tight">{venue.name}</h2>
-            <p className="truncate text-sm text-muted-foreground">
-              {venue.address ?? 'No address'}
-            </p>
-          </div>
-        )}
-      </div>
-
-      <dl className="grid grid-cols-2 border-y border-border">
-        <div className="space-y-1 border-r border-border p-4">
-          <dt className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-            Courts
-          </dt>
-          <dd className="text-lg font-semibold tabular-nums">
-            {activeCourts === undefined ? '—' : `${activeCourts} active`}
-          </dd>
-        </div>
-        <div className="space-y-1 p-4">
-          <dt className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-            Booked today
-          </dt>
-          <dd className="text-lg font-semibold tabular-nums">
-            {booked === undefined ? '—' : `${booked} h`}
-          </dd>
-          {booked !== undefined && capacity !== undefined && capacity > 0 && (
-            <div aria-hidden className="h-1 overflow-hidden rounded-full bg-muted">
-              <div
-                className="h-full bg-foreground"
-                style={{ width: `${Math.min(100, (booked / capacity) * 100)}%` }}
-              />
-            </div>
-          )}
-        </div>
-      </dl>
-
-      <div className="mt-auto flex flex-wrap gap-2 p-4">
-        {canCourts && (
-          <Link
-            href={`/staff/courts?venue=${venue.id}`}
-            aria-label={`Courts at ${venue.name}`}
-            className="inline-flex h-8 items-center rounded border border-border bg-surface px-3 text-sm font-medium hover:bg-muted"
-          >
-            Courts
-          </Link>
-        )}
-        <Button
-          variant="secondary"
-          size="sm"
-          aria-label={`Edit ${venue.name}`}
-          disabled={editing}
-          onClick={() => onEdit(true)}
-        >
-          Edit
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          disabled={saving}
-          aria-label={`${venue.is_active ? 'Deactivate' : 'Activate'} ${venue.name}`}
-          onClick={onToggleActive}
-        >
-          {venue.is_active ? 'Deactivate' : 'Activate'}
-        </Button>
-      </div>
-    </li>
-  );
+  return [
+    { label: 'Courts', value: courts === undefined ? '—' : `${courts} active` },
+    {
+      label: 'Booked today',
+      value: booked === undefined ? '—' : `${booked} h`,
+      meter: booked !== undefined && courts ? booked / (courts * DAY_HOURS) : undefined,
+    },
+  ];
 }
 
 function EditVenue({
@@ -234,6 +191,7 @@ function EditVenue({
 }) {
   const [name, setName] = useState(venue.name);
   const [address, setAddress] = useState(venue.address ?? '');
+  const escape = (e: React.KeyboardEvent) => e.key === 'Escape' && onCancel();
   return (
     <form
       className="grid gap-2"
@@ -247,14 +205,14 @@ function EditVenue({
         autoFocus
         value={name}
         onChange={(e) => setName(e.target.value)}
-        onKeyDown={(e) => e.key === 'Escape' && onCancel()}
+        onKeyDown={escape}
       />
       <Input
         aria-label={`${venue.name} address`}
         placeholder="Address"
         value={address}
         onChange={(e) => setAddress(e.target.value)}
-        onKeyDown={(e) => e.key === 'Escape' && onCancel()}
+        onKeyDown={escape}
       />
       <div className="flex gap-2">
         <Button type="submit" size="sm" loading={pending} disabled={!name.trim()}>
@@ -268,78 +226,55 @@ function EditVenue({
   );
 }
 
-function AddVenueTile({
-  adding,
-  onAdding,
+function NewVenueForm({
   pending,
   onCreate,
+  onCancel,
 }: {
-  adding: boolean;
-  onAdding: (on: boolean) => void;
   pending: boolean;
-  onCreate: (body: { name: string; address?: string }) => void;
+  onCreate: (body: VenueCreate) => void;
+  onCancel: () => void;
 }) {
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
-  const hint = 'Created with a Venue master and a Front desk group';
   return (
-    <li className="min-h-72 rounded-lg border border-dashed border-input">
-      {adding ? (
-        <form
-          className="flex h-full flex-col justify-center gap-3 p-5"
-          onSubmit={(e) => {
-            e.preventDefault();
-            const trimmed = address.trim();
-            if (name.trim())
-              onCreate({ name: name.trim(), ...(trimmed ? { address: trimmed } : {}) });
-          }}
-          onKeyDown={(e) => e.key === 'Escape' && onAdding(false)}
-        >
-          <div className="space-y-1">
-            <Label htmlFor="venue-name">Name</Label>
-            <Input
-              id="venue-name"
-              autoFocus
-              placeholder="e.g. Pikol - Minglanilla"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="venue-address">Address</Label>
-            <Input
-              id="venue-address"
-              placeholder="Optional"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-            />
-          </div>
-          <p className="text-sm text-muted-foreground">{hint}</p>
-          <div className="flex gap-2">
-            <Button type="submit" loading={pending} disabled={!name.trim()}>
-              Create venue
-            </Button>
-            <Button type="button" variant="ghost" onClick={() => onAdding(false)}>
-              Cancel
-            </Button>
-          </div>
-        </form>
-      ) : (
-        <button
-          type="button"
-          onClick={() => onAdding(true)}
-          className="flex size-full min-h-72 flex-col items-center justify-center gap-3 rounded-lg p-5 transition-colors duration-150 hover:bg-muted/60"
-        >
-          <span
-            aria-hidden
-            className="inline-flex size-12 items-center justify-center rounded border border-foreground"
-          >
-            <Plus className="size-5" />
-          </span>
-          <span className="font-semibold">Add venue</span>
-          <span className="text-sm text-muted-foreground">{hint}</span>
-        </button>
-      )}
-    </li>
+    <form
+      className="flex flex-col gap-3"
+      onSubmit={(e) => {
+        e.preventDefault();
+        const trimmed = address.trim();
+        if (name.trim()) onCreate({ name: name.trim(), ...(trimmed ? { address: trimmed } : {}) });
+      }}
+      onKeyDown={(e) => e.key === 'Escape' && onCancel()}
+    >
+      <div className="space-y-1">
+        <Label htmlFor="venue-name">Name</Label>
+        <Input
+          id="venue-name"
+          autoFocus
+          placeholder="e.g. Pikol - Minglanilla"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
+      </div>
+      <div className="space-y-1">
+        <Label htmlFor="venue-address">Address</Label>
+        <Input
+          id="venue-address"
+          placeholder="Optional"
+          value={address}
+          onChange={(e) => setAddress(e.target.value)}
+        />
+      </div>
+      <p className="text-sm text-muted-foreground">{ADD_HINT}</p>
+      <div className="flex gap-2">
+        <Button type="submit" loading={pending} disabled={!name.trim()}>
+          Create venue
+        </Button>
+        <Button type="button" variant="ghost" onClick={onCancel}>
+          Cancel
+        </Button>
+      </div>
+    </form>
   );
 }

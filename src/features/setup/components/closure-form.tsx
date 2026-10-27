@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { SectionLabel } from '@/components/ui/section-label';
 import { Select } from '@/components/ui/select';
 import { cn } from '@/lib/cn';
 import { errorCode, errorMessage } from '@/lib/api-error';
@@ -91,20 +92,6 @@ function serverMessage(err: unknown): string {
     : detail;
 }
 
-/** "01 Courts" — the numbered step heading of the form. */
-function Step({ n, children }: { n: number; children: React.ReactNode }) {
-  return (
-    <span className="flex items-baseline gap-2">
-      <span aria-hidden className="text-sm font-semibold tabular-nums">
-        {String(n).padStart(2, '0')}
-      </span>
-      <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-        {children}
-      </span>
-    </span>
-  );
-}
-
 export function ClosureForm({ venueId }: { venueId: number }) {
   const { data, isError, error } = useCourts(venueId);
   const close = useCloseCourts();
@@ -178,7 +165,7 @@ export function ClosureForm({ venueId }: { venueId: number }) {
         <legend className="sr-only">Courts</legend>
         <div className="flex items-center justify-between gap-2">
           <span aria-hidden>
-            <Step n={1}>Courts</Step>
+            <SectionLabel n={1}>Courts</SectionLabel>
           </span>
           {courts.length > 0 && (
             <Button
@@ -231,7 +218,7 @@ export function ClosureForm({ venueId }: { venueId: number }) {
 
       <fieldset className="space-y-3">
         <legend>
-          <Step n={2}>When</Step>
+          <SectionLabel n={2}>When</SectionLabel>
         </legend>
         <div className="flex flex-wrap gap-2">
           {presets(new Date()).map(({ label, range: preset }) => (
@@ -287,17 +274,9 @@ export function ClosureForm({ venueId }: { venueId: number }) {
       </fieldset>
 
       <div className="space-y-3">
-        <div className="flex items-baseline gap-2">
-          <span aria-hidden className="text-sm font-semibold tabular-nums">
-            03
-          </span>
-          <label
-            htmlFor="closure-reason"
-            className="text-xs font-semibold uppercase tracking-widest text-muted-foreground"
-          >
-            Reason
-          </label>
-        </div>
+        <SectionLabel n={3}>
+          <label htmlFor="closure-reason">Reason</label>
+        </SectionLabel>
         <Input
           id="closure-reason"
           placeholder="e.g. Line repainting"

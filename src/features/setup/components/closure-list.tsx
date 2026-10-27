@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { Alert } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { PageLoading } from '@/components/ui/page-loading';
 import { ReasonForm, type AdminBooking } from '@/features/admin-bookings';
 import { errorMessage } from '@/lib/api-error';
@@ -112,7 +112,7 @@ export function ClosureList({ venueId }: { venueId: number }) {
                     <Link
                       href={`/staff/schedule?venue=${venueId}&date=${day}`}
                       aria-label={`View ${title} on the schedule`}
-                      className="inline-flex h-8 items-center rounded border border-border px-3 text-sm font-medium hover:bg-muted"
+                      className={buttonVariants({ variant: 'secondary', size: 'sm' })}
                     >
                       View
                     </Link>
