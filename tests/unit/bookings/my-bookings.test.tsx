@@ -134,18 +134,4 @@ describe('AppNav', () => {
     );
     expect(screen.getByRole('link', { name: 'Venues' })).not.toHaveAttribute('aria-current');
   });
-
-  it('shows staff links, not player links, to staff', () => {
-    nav(['BOOKING:ReadAny']);
-    expect(screen.getByRole('link', { name: 'Schedule' })).toHaveAttribute(
-      'href',
-      '/staff/schedule',
-    );
-    expect(screen.queryByRole('link', { name: 'My bookings' })).not.toBeInTheDocument();
-  });
-
-  it('is hidden until permissions load', () => {
-    const { container } = nav(undefined);
-    expect(container).toBeEmptyDOMElement();
-  });
 });

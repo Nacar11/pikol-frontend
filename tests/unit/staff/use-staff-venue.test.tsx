@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { StaffVenueSync, useStaffVenue, VenuePicker } from '@/features/staff';
+import { StaffVenueSync, useStaffVenue, VenueSwitcher } from '@/features/staff';
 import { staffApi } from '@/features/staff/api';
 import { VENUE_STORAGE_KEY } from '@/features/staff/use-staff-venue';
 import { apiClient } from '@/lib/api-client';
@@ -28,7 +28,7 @@ function Probe() {
     <>
       <p data-testid="id">{String(v.venueId)}</p>
       <p data-testid="pick">{String(v.canPick)}</p>
-      <VenuePicker />
+      <VenueSwitcher />
     </>
   );
 }

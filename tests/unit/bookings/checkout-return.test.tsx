@@ -1,7 +1,7 @@
 import { QueryClientProvider } from '@tanstack/react-query';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import CheckoutReturnPage from '@/app/(app)/checkout/return/page';
+import CheckoutReturnPage from '@/app/(app)/(player)/checkout/return/page';
 import { bookingsApi } from '@/features/bookings/api';
 import type { Booking } from '@/features/bookings/schemas';
 import { ApiError } from '@/lib/api-client';

@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import { PageLoading } from '@/components/ui/page-loading';
-import { StaffGate, StaffVenueSync } from '@/features/staff';
+import { ResolutionBadge } from '@/features/admin-bookings';
+import { StaffGate, StaffShell, StaffVenueSync } from '@/features/staff';
 
 export default function StaffLayout({ children }: { children: React.ReactNode }) {
   // StaffVenueSync reads useSearchParams, which needs a Suspense boundary for
@@ -9,7 +10,9 @@ export default function StaffLayout({ children }: { children: React.ReactNode })
   return (
     <Suspense fallback={<PageLoading />}>
       <StaffVenueSync>
-        <StaffGate permission="BOOKING:ReadAny">{children}</StaffGate>
+        <StaffGate permission="BOOKING:ReadAny">
+          <StaffShell badges={{ '/staff/resolution': <ResolutionBadge /> }}>{children}</StaffShell>
+        </StaffGate>
       </StaffVenueSync>
     </Suspense>
   );

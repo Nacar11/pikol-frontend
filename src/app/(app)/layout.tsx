@@ -1,13 +1,7 @@
-import { AppNav } from '@/components/layout/app-nav';
-import { AppShell } from '@/components/layout/app-shell';
-import { AuthGate, UserMenu } from '@/features/auth';
+import { AuthGate } from '@/features/auth';
 
+/** Signed-in routes. Each area brings its own frame: the staff console its
+ * sidebar shell, the player pages their top bar. */
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <AuthGate>
-      <AppShell nav={<AppNav />} menu={<UserMenu />}>
-        {children}
-      </AppShell>
-    </AuthGate>
-  );
+  return <AuthGate>{children}</AuthGate>;
 }

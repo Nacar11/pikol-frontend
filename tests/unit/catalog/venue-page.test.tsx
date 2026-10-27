@@ -1,6 +1,6 @@
 import { screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import VenuePage from '@/app/(app)/venues/[venueId]/page';
+import VenuePage from '@/app/(app)/(player)/venues/[venueId]/page';
 import { catalogApi } from '@/features/catalog/api';
 import { ApiError } from '@/lib/api-client';
 import { renderWithAuth, setSearch } from '../auth/render';

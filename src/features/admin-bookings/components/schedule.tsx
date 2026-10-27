@@ -17,7 +17,7 @@ import {
   useAvailability,
   type Selection,
 } from '@/features/availability';
-import { useStaffVenue, VenuePicker } from '@/features/staff';
+import { useStaffVenue } from '@/features/staff';
 import { errorCode, errorMessage } from '@/lib/api-error';
 import { formatDayLong } from '@/lib/manila';
 import { REFETCH_MS } from '../hooks/use-day-bookings';
@@ -46,7 +46,6 @@ export function Schedule({
           <h1 className="text-2xl font-semibold tracking-tight">Schedule</h1>
           <p className="text-sm text-muted-foreground">{formatDayLong(date)}</p>
         </div>
-        <VenuePicker />
       </div>
       <DateStrip value={date} onChange={onDateChange} start={-7} days={21} />
       {venueId !== null ? (

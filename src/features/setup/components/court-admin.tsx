@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { PageLoading } from '@/components/ui/page-loading';
-import { StaffGate, useStaffVenue, VenuePicker } from '@/features/staff';
+import { StaffGate, useStaffVenue } from '@/features/staff';
 import { errorMessage } from '@/lib/api-error';
 import { useAdminCourts, useCreateCourt, useUpdateCourt } from '../hooks/use-setup';
 import type { Court } from '../schemas';
@@ -64,7 +64,6 @@ function VenueCourts({ venueId }: { venueId: number }) {
     <section className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-xl font-semibold">Courts</h1>
-        <VenuePicker />
       </div>
       <form onSubmit={add} className="grid gap-3 rounded border border-border bg-surface p-3">
         <div className="space-y-1">

@@ -2,7 +2,7 @@
 
 import { Alert } from '@/components/ui/alert';
 import { PageLoading } from '@/components/ui/page-loading';
-import { StaffGate, useStaffVenue, VenuePicker } from '@/features/staff';
+import { StaffGate, useStaffVenue } from '@/features/staff';
 import { errorMessage } from '@/lib/api-error';
 import { ClosureForm } from './closure-form';
 import { ClosureList } from './closure-list';
@@ -26,7 +26,6 @@ function Closures() {
     <section key={venueId} className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-xl font-semibold">Court closures</h1>
-        <VenuePicker />
       </div>
       <ClosureForm venueId={venueId} />
       <ClosureList venueId={venueId} />
