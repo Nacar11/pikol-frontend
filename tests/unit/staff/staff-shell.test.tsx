@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { authApi } from '@/features/auth/api';
 import { StaffShell } from '@/features/staff';
 import { staffApi } from '@/features/staff/api';
-import { renderWithAuth, setSearch } from '../auth/render';
+import { renderWithAuth, router, setSearch } from '../auth/render';
 
 vi.mock('@/features/auth/api', () => ({ authApi: { permissions: vi.fn() } }));
 vi.mock('@/features/staff/api', () => ({ staffApi: { myVenues: vi.fn() } }));
@@ -31,13 +31,15 @@ const OWNER = [
 ];
 const ana = { id: 1, first_name: 'Ana', last_name: 'Lim' } as never;
 
+const logout = vi.fn(async () => undefined);
+
 function setup(permissions: string[], badges = {}) {
   vi.mocked(authApi.permissions).mockResolvedValue(permissions);
   renderWithAuth(
     <StaffShell badges={badges}>
       <p>page body</p>
     </StaffShell>,
-    { status: 'authenticated', user: ana },
+    { status: 'authenticated', user: ana, logout },
   );
 }
 
@@ -150,5 +152,19 @@ describe('StaffShell', () => {
       'href',
       '#staff-main',
     );
+  });
+
+  it('signs out from the top bar, not the sidebar, and returns to the staff door', async () => {
+    const u = userEvent.setup();
+    setup(FRONT_DESK);
+    const bar = await screen.findByRole('banner');
+    const sidebar = screen.getByRole('complementary', { name: 'Staff navigation' });
+
+    expect(within(sidebar).queryByRole('button', { name: 'Sign out' })).not.toBeInTheDocument();
+    expect(within(bar).getByText('Ana Lim')).toBeInTheDocument();
+    await u.click(within(bar).getByRole('button', { name: 'Sign out' }));
+
+    expect(logout).toHaveBeenCalled();
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/login'));
   });
 });

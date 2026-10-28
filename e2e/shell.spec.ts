@@ -39,3 +39,13 @@ test('front desk sees only what its permissions allow', async ({ deskPage: page 
     await expect(nav.getByRole('link', { name: hidden })).toHaveCount(0);
   }
 });
+
+test('signs out from the top bar back to the staff door', async ({ deskPage: page }) => {
+  await page.goto('/staff/schedule');
+  const sidebar = page.locator('#staff-sidebar');
+  await expect(sidebar.getByRole('button', { name: 'Sign out' })).toHaveCount(0);
+  await page.getByRole('banner').getByRole('button', { name: 'Sign out' }).click();
+  // AuthGate may get there first and add ?next=, as it always has.
+  await expect(page).toHaveURL(/\/login(\?|$)/);
+  await expect(page.getByRole('button', { name: 'Sign in' })).toBeVisible();
+});

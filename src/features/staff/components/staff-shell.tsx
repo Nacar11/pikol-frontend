@@ -1,14 +1,14 @@
 'use client';
 
-import { LogOut, Menu, PanelLeftClose, PanelLeftOpen, X } from 'lucide-react';
+import { PanelLeftClose, PanelLeftOpen, X } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { useAuth, usePermissions } from '@/features/auth';
+import { usePermissions } from '@/features/auth';
 import { cn } from '@/lib/cn';
 import { readStorage, writeStorage } from '@/lib/storage';
 import { SECTION_LABELS, visibleSections } from '../nav-links';
-import { useStaffVenue } from '../use-staff-venue';
+import { StaffNavbar } from './staff-navbar';
 import { VenueSwitcher } from './venue-switcher';
 
 const SIDEBAR_STORAGE_KEY = 'pikol:staff_sidebar';
@@ -174,8 +174,6 @@ export function StaffShell({
             ))}
           </nav>
         </div>
-
-        <SignedIn permissions={permissions ?? []} collapsed={collapsed} />
       </aside>
 
       {/* Mobile drawer backdrop. */}
@@ -190,20 +188,6 @@ export function StaffShell({
         )}
       />
 
-      <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-border bg-surface px-2 md:hidden">
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          aria-label="Open navigation"
-          aria-expanded={open}
-          aria-controls="staff-sidebar"
-          className="inline-flex size-11 items-center justify-center rounded-md hover:bg-muted"
-        >
-          <Menu aria-hidden className="size-5" />
-        </button>
-        <span className="text-sm font-semibold tracking-tight">pikol</span>
-      </header>
-
       <div
         className={cn(
           'md:pl-64',
@@ -212,6 +196,11 @@ export function StaffShell({
           collapsed && 'md:pl-16',
         )}
       >
+        <StaffNavbar
+          permissions={permissions ?? []}
+          menuOpen={open}
+          onOpenMenu={() => setOpen(true)}
+        />
         <main
           id="staff-main"
           tabIndex={-1}
@@ -220,59 +209,6 @@ export function StaffShell({
           {children}
         </main>
       </div>
-    </div>
-  );
-}
-
-/** Who is signed in, set apart at the bottom with sign-out. "Super admin"
- * is read from an owner-only permission, never from a role. */
-function SignedIn({
-  permissions,
-  collapsed,
-}: {
-  permissions: readonly string[];
-  collapsed: boolean;
-}) {
-  const { user, logout } = useAuth();
-  const { venue } = useStaffVenue();
-  const router = useRouter();
-  if (!user) return null;
-  const initials = `${user.first_name[0] ?? ''}${user.last_name[0] ?? ''}`.toUpperCase();
-  const role = permissions.includes('VENUE:Manage')
-    ? 'Super admin'
-    : (venue?.groups.join(', ') ?? '');
-  return (
-    <div
-      className={cn(
-        'flex items-center gap-3 border-t border-neutral-900 px-4 py-3',
-        collapsed && 'md:flex-col md:gap-1 md:px-2',
-      )}
-    >
-      <span
-        aria-hidden
-        title={collapsed ? `${user.first_name} ${user.last_name} · ${role}` : undefined}
-        className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-neutral-800 text-xs font-semibold"
-      >
-        {initials}
-      </span>
-      <div className={cn('min-w-0 flex-1', collapsed && 'md:sr-only')}>
-        <p className="truncate text-sm font-medium">
-          {user.first_name} {user.last_name}
-        </p>
-        <p className="truncate text-xs text-neutral-400">{role}</p>
-      </div>
-      <button
-        type="button"
-        aria-label="Sign out"
-        title={collapsed ? 'Sign out' : undefined}
-        onClick={async () => {
-          await logout();
-          router.replace('/login');
-        }}
-        className="inline-flex size-11 items-center justify-center rounded-md text-neutral-300 hover:bg-neutral-900 hover:text-white focus-visible:ring-white"
-      >
-        <LogOut aria-hidden className="size-4" />
-      </button>
     </div>
   );
 }

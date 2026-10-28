@@ -46,7 +46,7 @@ the app's flow, kept in the console's black-and-white system, not a storefront.
 | `availability` | the day availability read and the slot-selection reducer |
 | `bookings` | the booking schema and `StatusBadge`, reused by the console |
 | `admin-bookings` | the Schedule (header, two-week strip, court grid, day-at-a-glance), the occupancy read, booking actions, the resolution queue |
-| `staff` | `StaffShell` (the sidebar), `StaffOnly`, `StaffGate`, `StaffVenueSync`, `useStaffVenue`, `VenueRequired`, `VenueSwitcher`, `STAFF_LINKS` |
+| `staff` | `StaffShell` (the sidebar — navigation only), `StaffNavbar` (the top bar: who is signed in and **Sign out**; the mobile menu button), `StaffOnly`, `StaffGate`, `StaffVenueSync`, `useStaffVenue`, `VenueRequired`, `VenueSwitcher`, `STAFF_LINKS` |
 | `setup` | venues, courts, price rules and the price preview, closures; `useCourtSummaries` / `useVenueSummaries` (one request per page for the cards' stats) |
 | `team` | Staff accounts: invites into a group, resend/revoke, deactivate |
 | `groups` | user groups: Setup → Venue staff and Masters → User groups |
