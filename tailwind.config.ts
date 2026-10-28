@@ -44,6 +44,16 @@ const config: Config = {
           foreground: 'hsl(var(--destructive-foreground))',
         },
         success: 'hsl(var(--success))',
+        event: Object.fromEntries(
+          ['wait', 'confirmed', 'done', 'bad', 'neutral'].map((tone) => [
+            tone,
+            {
+              DEFAULT: `hsl(var(--event-${tone}))`,
+              soft: `hsl(var(--event-${tone}-soft))`,
+              fg: `hsl(var(--event-${tone}-fg))`,
+            },
+          ]),
+        ),
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',

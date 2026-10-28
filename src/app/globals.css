@@ -27,6 +27,25 @@
     --input: 0 0% 83%; /* #d4d4d4 */
     --ring: 0 0% 4%;
     --radius: 6px;
+
+    /* Action events — the ONE place the console uses colour for status
+     * (design 2026-10-28, the user's choice). Every chip still carries its
+     * word and every dot its icon. `-fg` on `-soft` is at least 4.5:1. */
+    --event-wait: 38 92% 50%;
+    --event-wait-soft: 48 96% 89%;
+    --event-wait-fg: 26 83% 30%;
+    --event-confirmed: 221 83% 53%;
+    --event-confirmed-soft: 214 95% 93%;
+    --event-confirmed-fg: 224 64% 33%;
+    --event-done: 142 72% 29%;
+    --event-done-soft: 141 79% 85%;
+    --event-done-fg: 144 61% 20%;
+    --event-bad: 0 72% 45%;
+    --event-bad-soft: 0 93% 94%;
+    --event-bad-fg: 0 74% 35%;
+    --event-neutral: 0 0% 45%;
+    --event-neutral-soft: 0 0% 96%;
+    --event-neutral-fg: 0 0% 25%;
   }
 
   body {

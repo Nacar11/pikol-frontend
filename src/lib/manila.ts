@@ -124,6 +124,22 @@ export function formatDateTime(iso: string): string {
   return `${p.day} ${p.month}, ${p.hour}:${p.minute} ${meridiem(p.dayPeriod)}`;
 }
 
+/** "3:02 PM" and "Wed 28 Oct" — an event's time, to the minute. */
+export function formatEventTime(iso: string): { time: string; day: string } {
+  const p = parts(new Date(iso), {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+  return {
+    time: `${p.hour}:${p.minute} ${meridiem(p.dayPeriod)}`,
+    day: `${p.weekday} ${p.day} ${p.month}`,
+  };
+}
+
 export function formatHourOfDay(hour: number): string {
   if (!Number.isInteger(hour) || hour < 0 || hour > 23) throw new Error(`Invalid hour: ${hour}`);
   return `${hour % 12 === 0 ? 12 : hour % 12} ${hour < 12 ? 'AM' : 'PM'}`;
