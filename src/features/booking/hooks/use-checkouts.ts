@@ -1,6 +1,6 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { availabilityKeys } from '@/features/availability';
 import { useAuth } from '@/features/auth';
@@ -40,6 +40,9 @@ export function useCheckoutEvents(id: number, checkout: Checkout | undefined) {
     queryKey: checkoutKeys.events(id, version),
     queryFn: () => checkoutApi.events(id),
     enabled: status === 'authenticated' && checkout !== undefined,
+    // A new status is a new key: keep showing the last tracker meanwhile, or
+    // it vanishes at the very moment the customer is watching it.
+    placeholderData: keepPreviousData,
   });
 }
 

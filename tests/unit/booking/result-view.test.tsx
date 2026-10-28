@@ -184,4 +184,19 @@ describe('ResultView', () => {
     expect(list).toHaveTextContent('You');
     expect(checkoutApi.events).toHaveBeenCalledWith(1);
   });
+
+  it('keeps the tracker on screen while it refetches for a new status', async () => {
+    vi.mocked(checkoutApi.get).mockResolvedValue(checkoutFixture({ status: 'PENDING' }));
+    let landed: (c: ReturnType<typeof checkoutFixture>) => void = () => {};
+    vi.mocked(checkoutApi.refresh).mockReturnValue(new Promise((r) => (landed = r)));
+    show();
+    await screen.findByRole('list', { name: 'Action events' });
+
+    // The status changes; the tracker's refetch for it has not answered yet.
+    vi.mocked(checkoutApi.events).mockReturnValue(new Promise(() => {}));
+    landed(checkoutFixture({ status: 'SUCCESSFUL' }));
+
+    expect(await screen.findByRole('heading', { name: 'Payment successful' })).toBeInTheDocument();
+    expect(screen.getByRole('list', { name: 'Action events' })).toBeInTheDocument();
+  });
 });

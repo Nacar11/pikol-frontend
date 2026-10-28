@@ -93,6 +93,9 @@ export function ResultView({ id }: { id: number }) {
       <div className="rounded border border-border bg-surface p-4">
         <CheckoutLines checkout={c} />
       </div>
+      {events.isError && !events.data && (
+        <p className="text-sm text-destructive">Could not load what happened to this payment.</p>
+      )}
       {events.data && (
         <section
           aria-labelledby="action-events"
