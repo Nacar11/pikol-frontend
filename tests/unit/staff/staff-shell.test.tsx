@@ -154,17 +154,39 @@ describe('StaffShell', () => {
     );
   });
 
-  it('signs out from the top bar, not the sidebar, and returns to the staff door', async () => {
+  it('signs out from the profile menu, not the sidebar, and returns to the staff door', async () => {
     const u = userEvent.setup();
     setup(FRONT_DESK);
     const bar = await screen.findByRole('banner');
     const sidebar = screen.getByRole('complementary', { name: 'Staff navigation' });
 
-    expect(within(sidebar).queryByRole('button', { name: 'Sign out' })).not.toBeInTheDocument();
-    expect(within(bar).getByText('Ana Lim')).toBeInTheDocument();
-    await u.click(within(bar).getByRole('button', { name: 'Sign out' }));
+    expect(within(sidebar).queryByRole('menuitem', { name: 'Sign out' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('menuitem', { name: 'Sign out' })).not.toBeInTheDocument();
+    const profile = within(bar).getByRole('button', { name: 'Account: Ana Lim' });
+    await u.click(profile);
+    expect(profile).toHaveAttribute('aria-expanded', 'true');
+    await u.click(within(bar).getByRole('menuitem', { name: 'Sign out' }));
 
     expect(logout).toHaveBeenCalled();
     await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/login'));
+  });
+
+  it('opens the profile menu from the keyboard and closes it on Escape or a press outside', async () => {
+    const u = userEvent.setup();
+    setup(FRONT_DESK);
+    const profile = await screen.findByRole('button', { name: 'Account: Ana Lim' });
+
+    profile.focus();
+    await u.keyboard('{ArrowDown}');
+    expect(screen.getByRole('menuitem', { name: 'Sign out' })).toHaveFocus();
+    await u.keyboard('{Escape}');
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    expect(profile).toHaveFocus();
+
+    await u.click(profile);
+    expect(screen.getByRole('menu', { name: 'Account' })).toBeInTheDocument();
+    await u.click(document.body);
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    expect(logout).not.toHaveBeenCalled();
   });
 });
