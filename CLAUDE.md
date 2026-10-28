@@ -53,8 +53,8 @@ the app's flow, kept in the console's black-and-white system, not a storefront.
 | `parameters` | the owner's business-parameters screen |
 
 Routes: `/login` (the staff console's sign-in), `/customer-login-demo` (the
-booking demo's own sign-in — Customer-group accounts only), `/forgot-password`, `/reset-password`, `/verify-email`,
-`/accept-invite`; the customer pages `/book` (venue cards), `/book/[venueId]?date=`
+booking demo's own sign-in — Customer-group accounts only), `/forgot-password`,
+`/reset-password`, `/verify-email`, `/accept-invite`; the customer pages `/book` (venue cards), `/book/[venueId]?date=`
 (grid), `/book/checkout/[id]` (hold page), `/book/result/[id]` (result — also
 Maya's redirect target for success, failure and cancel) and `/book/mine`; and
 the staff console under `/staff`
