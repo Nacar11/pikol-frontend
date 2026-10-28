@@ -9,6 +9,7 @@ export const buttonVariants = cva(
       variant: {
         primary: 'bg-primary text-primary-foreground hover:bg-primary/90',
         secondary: 'border border-border bg-surface text-foreground hover:bg-muted',
+        destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
         ghost: 'text-foreground hover:bg-muted',
         link: 'h-auto px-0 text-primary underline-offset-4 hover:underline',
       },

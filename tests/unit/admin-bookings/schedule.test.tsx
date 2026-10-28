@@ -112,6 +112,13 @@ function setup(permissions = ['BOOKING:ReadAny', 'BOOKING:CreateWalkIn']) {
   return { qc, view };
 }
 
+/** "Book walk-in" asks first; this presses it and then confirms. */
+async function bookWalkIn() {
+  await userEvent.click(screen.getByRole('button', { name: 'Book walk-in' }));
+  const dialog = screen.getByRole('alertdialog');
+  await userEvent.click(within(dialog).getByRole('button', { name: 'Book walk-in' }));
+}
+
 const PAST_CELL = 'Court 2, 6 PM, available, already started, ₱600';
 
 beforeEach(() => {
@@ -131,7 +138,7 @@ describe('Schedule walk-ins', () => {
     );
     setup();
     await userEvent.click(await screen.findByRole('button', { name: PAST_CELL }));
-    await userEvent.click(screen.getByRole('button', { name: 'Book walk-in' }));
+    await bookWalkIn();
     await waitFor(() =>
       expect(adminBookingsApi.walkIn).toHaveBeenCalledWith({
         court_id: 7,
@@ -141,6 +148,22 @@ describe('Schedule walk-ins', () => {
     );
     await waitFor(() => expect(notify.success).toHaveBeenCalledWith('Walk-in booked · PKL-9'));
     expect(screen.queryByRole('button', { name: 'Book walk-in' })).not.toBeInTheDocument();
+  });
+
+  it('asks before booking, and going back books nothing', async () => {
+    setup();
+    await userEvent.click(await screen.findByRole('button', { name: PAST_CELL }));
+    await userEvent.type(screen.getByLabelText('Notes (optional)'), 'Lessons');
+    await userEvent.click(screen.getByRole('button', { name: 'Book walk-in' }));
+    const dialog = screen.getByRole('alertdialog');
+    expect(dialog).toHaveTextContent('Book this walk-in?');
+    expect(dialog).toHaveTextContent('Court 2');
+    expect(dialog).toHaveTextContent('1 hour · ₱600');
+    expect(dialog).toHaveTextContent('Notes: Lessons');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Go back' }));
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    expect(adminBookingsApi.walkIn).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Book walk-in' })).toBeInTheDocument();
   });
 
   it('has no buttons in the grid without BOOKING:CreateWalkIn', async () => {
@@ -157,7 +180,7 @@ describe('Schedule walk-ins', () => {
     );
     setup();
     await userEvent.click(await screen.findByRole('button', { name: PAST_CELL }));
-    await userEvent.click(screen.getByRole('button', { name: 'Book walk-in' }));
+    await bookWalkIn();
     await waitFor(() => expect(notify.error).toHaveBeenCalledWith('Someone just booked that.'));
     expect(screen.queryByRole('button', { name: 'Book walk-in' })).not.toBeInTheDocument();
     await waitFor(() => expect(availabilityApi.day).toHaveBeenCalledTimes(2));
@@ -169,7 +192,7 @@ describe('Schedule walk-ins', () => {
     );
     setup();
     await userEvent.click(await screen.findByRole('button', { name: PAST_CELL }));
-    await userEvent.click(screen.getByRole('button', { name: 'Book walk-in' }));
+    await bookWalkIn();
     await waitFor(() => expect(notify.error).toHaveBeenCalledWith('That is too far back.'));
     expect(screen.getByRole('button', { name: 'Book walk-in' })).toBeInTheDocument();
   });

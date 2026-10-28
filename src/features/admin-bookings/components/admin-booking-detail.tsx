@@ -1,14 +1,20 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
 import { Alert } from '@/components/ui/alert';
+import { type Confirmation, ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { PageLoading } from '@/components/ui/page-loading';
 import { usePermissions } from '@/features/auth';
 import { StatusBadge } from '@/features/bookings';
 import { errorCode, errorMessage } from '@/lib/api-error';
 import { formatDayLong, formatHour, formatTimeRange, manilaDayOf } from '@/lib/manila';
 import { formatPeso } from '@/lib/money';
-import { useAdminBooking, useStaffAction } from '../hooks/use-admin-booking';
+import {
+  type StaffActionRequest,
+  useAdminBooking,
+  useStaffAction,
+} from '../hooks/use-admin-booking';
 import type { AdminBooking } from '../schemas';
 import { staffActions } from '../staff-actions';
 import { MarkPaidForm } from './mark-paid-form';
@@ -45,6 +51,8 @@ export function AdminBookingDetail({ id }: { id: number }) {
   const { data: booking, error, isPending } = useAdminBooking(id);
   const permissions = usePermissions().data ?? [];
   const action = useStaffAction(id);
+  // Every decision here asks first; the dialog holds the request until confirmed.
+  const [asked, setAsked] = useState<StaffActionRequest | null>(null);
 
   if (isPending) return <PageLoading label="Loading booking" />;
   // A failed background refetch keeps the booking already on screen.
@@ -57,6 +65,10 @@ export function AdminBookingDetail({ id }: { id: number }) {
   }
 
   const allowed = staffActions(booking, permissions, Date.now());
+  const ask = (request: StaffActionRequest) => {
+    action.reset();
+    setAsked(request);
+  };
   return (
     <section className="space-y-5">
       <div className="space-y-1">
@@ -73,13 +85,13 @@ export function AdminBookingDetail({ id }: { id: number }) {
       {allowed.has('markPaid') && (
         <MarkPaidForm
           pending={action.isPending}
-          onPay={(method) => action.mutate({ action: 'markPaid', method })}
+          onPay={(method) => ask({ action: 'markPaid', method })}
         />
       )}
       {allowed.has('outcome') && (
         <OutcomeButtons
           pending={action.isPending}
-          onOutcome={(outcome) => action.mutate({ action: 'outcome', outcome })}
+          onOutcome={(outcome) => ask({ action: 'outcome', outcome })}
         />
       )}
       {allowed.has('cancel') && (
@@ -89,7 +101,7 @@ export function AdminBookingDetail({ id }: { id: number }) {
             label="Reason for cancelling"
             submitLabel="Cancel booking"
             pending={action.isPending}
-            onSubmit={(reason) => action.mutate({ action: 'cancel', reason })}
+            onSubmit={(reason) => ask({ action: 'cancel', reason })}
           />
         </div>
       )}
@@ -98,11 +110,101 @@ export function AdminBookingDetail({ id }: { id: number }) {
           label="Why is the court reopening?"
           submitLabel="Reopen court"
           pending={action.isPending}
-          onSubmit={(reason) => action.mutate({ action: 'reopen', reason })}
+          onSubmit={(reason) => ask({ action: 'reopen', reason })}
         />
       )}
+      <ConfirmDialog
+        confirmation={asked && confirmationFor(asked, booking)}
+        pending={action.isPending}
+        onClose={() => setAsked(null)}
+        onConfirm={() => {
+          if (asked) action.mutate(asked, { onSettled: () => setAsked(null) });
+        }}
+      />
     </section>
   );
+}
+
+function confirmationFor(request: StaffActionRequest, booking: AdminBooking): Confirmation {
+  const what = (
+    <p>
+      <span className="font-mono font-medium text-foreground">{booking.reference_code}</span> ·{' '}
+      {booking.court_name} · {formatDayLong(manilaDayOf(booking.starts_at))},{' '}
+      {formatTimeRange(booking.starts_at, booking.ends_at)}
+    </p>
+  );
+  const reason = (r: string) => (
+    <p>
+      Reason: <span className="text-foreground">{r}</span>
+    </p>
+  );
+  switch (request.action) {
+    case 'markPaid': {
+      const how = PAYMENT_METHOD_LABELS[request.method];
+      return {
+        title: `Collect ${formatPeso(booking.total_centavos)} by ${how}?`,
+        body: (
+          <>
+            {what}
+            <p>
+              Only confirm once the money is in hand
+              {request.method === 'MANUAL_GCASH' ? ' and the transfer shows in GCash' : ''}.
+            </p>
+          </>
+        ),
+        confirmLabel: `Mark paid · ${how}`,
+      };
+    }
+    case 'outcome':
+      return request.outcome === 'COMPLETED'
+        ? {
+            title: 'Mark as completed?',
+            body: (
+              <>
+                {what}
+                <p>The player showed up and played.</p>
+              </>
+            ),
+            confirmLabel: 'Mark completed',
+          }
+        : {
+            title: 'Mark as a no-show?',
+            body: (
+              <>
+                {what}
+                <p>Nobody came for this booking.</p>
+              </>
+            ),
+            confirmLabel: 'Mark no-show',
+          };
+    case 'cancel':
+      return {
+        title: 'Cancel this booking?',
+        body: (
+          <>
+            {what}
+            {reason(request.reason)}
+            <p>The hours open up for booking again. No refund is issued.</p>
+          </>
+        ),
+        confirmLabel: 'Cancel booking',
+        cancelLabel: 'Keep booking',
+        destructive: true,
+      };
+    case 'reopen':
+      return {
+        title: 'Reopen this court?',
+        body: (
+          <>
+            {what}
+            {reason(request.reason)}
+            <p>The closure ends and these hours can be booked again.</p>
+          </>
+        ),
+        confirmLabel: 'Reopen court',
+        cancelLabel: 'Keep closed',
+      };
+  }
 }
 
 function Summary({ booking }: { booking: AdminBooking }) {

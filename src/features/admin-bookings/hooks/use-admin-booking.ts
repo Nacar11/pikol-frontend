@@ -17,7 +17,7 @@ export function useAdminBooking(id: number) {
   });
 }
 
-type StaffActionRequest =
+export type StaffActionRequest =
   | { action: 'markPaid'; method: ManualPaymentMethod }
   | { action: 'outcome'; outcome: Outcome }
   | { action: 'cancel'; reason: string }

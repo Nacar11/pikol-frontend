@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { notify } from '@/components/ui/snackbar';
 import { Alert } from '@/components/ui/alert';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { PageLoading } from '@/components/ui/page-loading';
 import { usePermissions } from '@/features/auth';
 import {
@@ -17,7 +18,8 @@ import {
 } from '@/features/availability';
 import { useStaffVenue } from '@/features/staff';
 import { errorCode, errorMessage } from '@/lib/api-error';
-import { addDays, manilaHourNow, manilaToday } from '@/lib/manila';
+import { addDays, formatDayLong, formatTimeRange, manilaHourNow, manilaToday } from '@/lib/manila';
+import { formatPeso } from '@/lib/money';
 import { useWalkIn } from '../hooks/use-admin-booking-mutations';
 import { adminBookingKeys } from '../keys';
 import { REFETCH_MS, useDayBookings } from '../hooks/use-day-bookings';
@@ -118,6 +120,8 @@ function VenueDay({
   const walkIn = useWalkIn(venueId, date);
   const [selection, setSelection] = useState<Selection | null>(null);
   const [notes, setNotes] = useState('');
+  // "Book walk-in" asks first: one tap must not take a court.
+  const [confirming, setConfirming] = useState(false);
 
   // A cell somebody else just took must not survive into a 409.
   useEffect(() => {
@@ -144,6 +148,7 @@ function VenueDay({
         setNotes('');
         notify.success(`Walk-in booked · ${booking.reference_code}`);
       },
+      onSettled: () => setConfirming(false),
       onError: (err) => {
         notify.error(errorMessage(err));
         if (errorCode(err) === 'SLOT_UNAVAILABLE') {
@@ -197,10 +202,44 @@ function VenueDay({
           subtotal={subtotalCentavos(selection, data)}
           notes={notes}
           onNotesChange={setNotes}
-          onSubmit={submit}
+          onSubmit={() => setConfirming(true)}
           pending={walkIn.isPending}
         />
       )}
+      <ConfirmDialog
+        confirmation={
+          confirming && data && selection && court && first
+            ? {
+                title: 'Book this walk-in?',
+                body: (
+                  <>
+                    <p className="font-medium text-foreground">
+                      {court.name} · {formatDayLong(date)}
+                    </p>
+                    <p>
+                      {formatTimeRange(
+                        first.starts_at,
+                        new Date(
+                          Date.parse(first.starts_at) +
+                            (selection.end - selection.start + 1) * 3_600_000,
+                        ).toISOString(),
+                      )}{' '}
+                      · {selection.end - selection.start + 1}{' '}
+                      {selection.end === selection.start ? 'hour' : 'hours'} ·{' '}
+                      {formatPeso(subtotalCentavos(selection, data))}
+                    </p>
+                    {notes.trim() && <p>Notes: {notes.trim()}</p>}
+                    <p>It is confirmed at once and stays unpaid until you collect payment.</p>
+                  </>
+                ),
+                confirmLabel: 'Book walk-in',
+              }
+            : null
+        }
+        pending={walkIn.isPending}
+        onClose={() => setConfirming(false)}
+        onConfirm={submit}
+      />
     </div>
   );
 }

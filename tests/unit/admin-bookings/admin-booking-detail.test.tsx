@@ -1,5 +1,5 @@
 import { QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AdminBooking } from '@/features/admin-bookings';
@@ -73,6 +73,12 @@ function apiError(status: number, code: string, detail: string) {
   return new ApiError(status, { detail, code, request_id: 'r' });
 }
 
+/** Every decision opens a confirm dialog first; this presses its confirm button. */
+async function confirm(label: string) {
+  const dialog = await screen.findByRole('alertdialog');
+  await userEvent.click(within(dialog).getByRole('button', { name: label }));
+}
+
 function setup(permissions: string[] = ALL) {
   vi.mocked(authApi.permissions).mockResolvedValue(permissions as never);
   const qc = createQueryClient();
@@ -135,6 +141,9 @@ describe('AdminBookingDetail', () => {
     after(api.markPaid, booking({ payment_status: 'PAID', payment_method: 'CASH' }));
     const { qc, invalidate } = setup();
     await userEvent.click(await screen.findByRole('button', { name: 'Cash' }));
+    expect(api.markPaid).not.toHaveBeenCalled();
+    expect(screen.getByRole('alertdialog')).toHaveTextContent('Collect ₱1,320 by Cash?');
+    await confirm('Mark paid · Cash');
     await waitFor(() => expect(api.markPaid).toHaveBeenCalledWith(42, 'CASH'));
     expect(await screen.findByText('Paid')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Cash' })).not.toBeInTheDocument();
@@ -149,6 +158,7 @@ describe('AdminBookingDetail', () => {
     after(api.markPaid, booking({ payment_status: 'PAID' }));
     setup();
     await userEvent.click(await screen.findByRole('button', { name: 'GCash (manual)' }));
+    await confirm('Mark paid · GCash (manual)');
     await waitFor(() => expect(api.markPaid).toHaveBeenCalledWith(42, 'MANUAL_GCASH'));
   });
 
@@ -160,7 +170,9 @@ describe('AdminBookingDetail', () => {
     });
     setup();
     await userEvent.click(await screen.findByRole('button', { name: 'Cash' }));
+    await confirm('Mark paid · Cash');
     expect(await screen.findByText('Booking is already paid')).toBeInTheDocument();
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
     await waitFor(() => expect(api.get).toHaveBeenCalledTimes(2));
     await waitFor(() =>
       expect(screen.queryByRole('button', { name: 'Cash' })).not.toBeInTheDocument(),
@@ -177,6 +189,7 @@ describe('AdminBookingDetail', () => {
     );
     setup();
     await userEvent.click(await screen.findByRole('button', { name: 'Completed' }));
+    await confirm('Mark completed');
     await waitFor(() => expect(api.outcome).toHaveBeenCalledWith(42, 'COMPLETED'));
     await waitFor(() =>
       expect(screen.queryByRole('button', { name: 'No-show' })).not.toBeInTheDocument(),
@@ -201,6 +214,11 @@ describe('AdminBookingDetail', () => {
     await userEvent.type(screen.getByLabelText('Reason for cancelling'), 'Rain');
     expect(submit).toBeEnabled();
     await userEvent.click(submit);
+    const dialog = screen.getByRole('alertdialog');
+    expect(dialog).toHaveTextContent('Reason: Rain');
+    expect(dialog).toHaveTextContent('No refund is issued.');
+    expect(api.cancel).not.toHaveBeenCalled();
+    await confirm('Cancel booking');
     await waitFor(() => expect(api.cancel).toHaveBeenCalledWith(42, 'Rain'));
     expect(await screen.findByText('Rain')).toBeInTheDocument();
     expect(screen.queryByLabelText('Reason for cancelling')).not.toBeInTheDocument();
@@ -215,8 +233,32 @@ describe('AdminBookingDetail', () => {
     setup();
     await userEvent.type(await screen.findByLabelText('Why is the court reopening?'), 'Fixed');
     await userEvent.click(screen.getByRole('button', { name: 'Reopen court' }));
+    await confirm('Reopen court');
     await waitFor(() => expect(api.reopenClosure).toHaveBeenCalledWith(42, 'Fixed'));
     expect(api.cancel).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['No-show', 'Mark as a no-show?'],
+    ['Completed', 'Mark as completed?'],
+  ])('backing out of %s sends nothing', async (button, title) => {
+    api.get.mockResolvedValue(booking({ payment_status: 'PAID', display_status: 'IN_PROGRESS' }));
+    setup();
+    await userEvent.click(await screen.findByRole('button', { name: button }));
+    expect(screen.getByRole('alertdialog')).toHaveTextContent(title);
+    await userEvent.click(screen.getByRole('button', { name: 'Go back' }));
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    expect(api.outcome).not.toHaveBeenCalled();
+  });
+
+  it('keeps the booking when the cancel dialog is dismissed', async () => {
+    setup();
+    await userEvent.type(await screen.findByLabelText('Reason for cancelling'), 'Rain');
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel booking' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Keep booking' }));
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    expect(api.cancel).not.toHaveBeenCalled();
+    expect(screen.getByLabelText('Reason for cancelling')).toHaveValue('Rain');
   });
 
   it('offers no actions without the permissions', async () => {
