@@ -8,9 +8,40 @@ import { renderWithAuth } from '../auth/render';
 import { checkoutFixture } from './fixtures';
 
 vi.mock('@/features/booking/api', () => ({
-  checkoutApi: { get: vi.fn(), refresh: vi.fn() },
+  checkoutApi: { get: vi.fn(), refresh: vi.fn(), events: vi.fn() },
 }));
 vi.mock('next/navigation', async () => (await import('../auth/render')).navigationMock);
+
+const EVENTS = {
+  data: [
+    {
+      id: 2,
+      type: 'PAYMENT_SUCCEEDED' as const,
+      occurred_at: '2026-10-28T07:02:00Z',
+      actor: { kind: 'SYSTEM' as const, name: null },
+      booking_id: null,
+      reference_code: null,
+      court_name: null,
+      data: { amount_centavos: 103000, method: 'ONLINE' },
+      derived: false,
+    },
+    {
+      id: 1,
+      type: 'HOLD_PLACED' as const,
+      occurred_at: '2026-10-28T07:00:00Z',
+      actor: { kind: 'CUSTOMER' as const, name: 'You' },
+      booking_id: 7,
+      reference_code: 'PKL-AB234',
+      court_name: 'Court 1',
+      data: {},
+      derived: false,
+    },
+  ],
+  total: 2,
+  page: 1,
+  limit: 2,
+  has_more: false,
+};
 
 function show() {
   return renderWithAuth(<ResultView id={1} />, {
@@ -23,6 +54,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   // Arriving asks Maya once; by default it has nothing new to say.
   vi.mocked(checkoutApi.refresh).mockImplementation(() => checkoutApi.get(1));
+  vi.mocked(checkoutApi.events).mockResolvedValue(EVENTS);
 });
 afterEach(() => vi.useRealTimers());
 
@@ -140,5 +172,16 @@ describe('ResultView', () => {
     await vi.advanceTimersByTimeAsync(9_000);
     expect(checkoutApi.get).toHaveBeenCalledTimes(calls);
     expect(calls - settled).toBeLessThanOrEqual(41);
+  });
+
+  it('shows the tracker of what happened to this payment', async () => {
+    vi.mocked(checkoutApi.get).mockResolvedValue(checkoutFixture({ status: 'SUCCESSFUL' }));
+    show();
+
+    const list = await screen.findByRole('list', { name: 'Action events' });
+    expect(list).toHaveTextContent('Payment successful');
+    expect(list).toHaveTextContent('Hours held');
+    expect(list).toHaveTextContent('You');
+    expect(checkoutApi.events).toHaveBeenCalledWith(1);
   });
 });

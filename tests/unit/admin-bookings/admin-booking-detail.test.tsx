@@ -17,6 +17,7 @@ vi.mock('@/features/admin-bookings/api', () => ({
     outcome: vi.fn(),
     cancel: vi.fn(),
     reopenClosure: vi.fn(),
+    events: vi.fn(),
   },
 }));
 vi.mock('@/features/auth/api', () => ({ authApi: { permissions: vi.fn() } }));
@@ -95,9 +96,30 @@ function setup(permissions: string[] = ALL) {
   return { qc, invalidate };
 }
 
+const EVENTS = {
+  data: [
+    {
+      id: 1,
+      type: 'WALK_IN_BOOKED' as const,
+      occurred_at: '2026-10-22T00:00:00Z',
+      actor: { kind: 'STAFF' as const, name: 'Dana Desk' },
+      booking_id: 42,
+      reference_code: 'PKL-42',
+      court_name: 'Court 2',
+      data: {},
+      derived: false,
+    },
+  ],
+  total: 1,
+  page: 1,
+  limit: 1,
+  has_more: false,
+};
+
 beforeEach(() => {
   vi.clearAllMocks();
   api.get.mockResolvedValue(booking());
+  api.events.mockResolvedValue(EVENTS);
 });
 
 describe('AdminBookingDetail', () => {
@@ -259,6 +281,20 @@ describe('AdminBookingDetail', () => {
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
     expect(api.cancel).not.toHaveBeenCalled();
     expect(screen.getByLabelText('Reason for cancelling')).toHaveValue('Rain');
+  });
+
+  it('shows the action events and refetches them after a decision', async () => {
+    after(api.markPaid, booking({ payment_status: 'PAID', payment_method: 'CASH' }));
+    setup();
+    const list = await screen.findByRole('list', { name: 'Action events' });
+    expect(list).toHaveTextContent('Walk-in booked');
+    expect(list).toHaveTextContent('Dana Desk');
+    expect(api.events).toHaveBeenCalledTimes(1);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Cash' }));
+    await confirm('Mark paid · Cash');
+
+    await waitFor(() => expect(api.events).toHaveBeenCalledTimes(2));
   });
 
   it('offers no actions without the permissions', async () => {

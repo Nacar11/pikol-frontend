@@ -31,6 +31,18 @@ export function useCheckout(id: number, { poll = false }: { poll?: boolean } = {
   });
 }
 
+/** Refetched whenever the checkout's polled state changes, so the tracker
+ * keeps up with the page without a second poll. */
+export function useCheckoutEvents(id: number, checkout: Checkout | undefined) {
+  const { status } = useAuth();
+  const version = checkout ? `${checkout.status}:${String(checkout.awaiting_payment)}` : '';
+  return useQuery({
+    queryKey: checkoutKeys.events(id, version),
+    queryFn: () => checkoutApi.events(id),
+    enabled: status === 'authenticated' && checkout !== undefined,
+  });
+}
+
 export function useMyCheckouts(page: number) {
   const { status } = useAuth();
   return useQuery({

@@ -51,4 +51,14 @@ test('every booking decision asks before it acts', async ({ deskPage: page }) =>
   await cancel.getByRole('button', { name: 'Cancel booking' }).click();
   await expect(cancel).toBeHidden();
   await expect(page.getByText('Cancellation reason')).toBeVisible();
+
+  // Every decision above is on the record, newest first, with who did it.
+  const steps = page.getByRole('list', { name: 'Action events' }).getByRole('listitem');
+  await expect(steps).toHaveCount(3);
+  await expect(steps.nth(0)).toContainText('Booking cancelled');
+  await expect(steps.nth(0)).toContainText('Reason: Player called off');
+  await expect(steps.nth(1)).toContainText('Payment collected');
+  await expect(steps.nth(1)).toContainText('Cash');
+  await expect(steps.nth(2)).toContainText('Walk-in booked');
+  await expect(steps.nth(2)).toContainText('Dana Desk');
 });

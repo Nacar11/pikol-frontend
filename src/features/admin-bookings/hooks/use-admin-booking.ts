@@ -17,6 +17,16 @@ export function useAdminBooking(id: number) {
   });
 }
 
+/** Every staff action invalidates `adminBookingKeys.all`, so this refetches. */
+export function useAdminBookingEvents(id: number) {
+  const { status } = useAuth();
+  return useQuery({
+    queryKey: adminBookingKeys.events(id),
+    queryFn: () => adminBookingsApi.events(id),
+    enabled: status === 'authenticated',
+  });
+}
+
 export type StaffActionRequest =
   | { action: 'markPaid'; method: ManualPaymentMethod }
   | { action: 'outcome'; outcome: Outcome }

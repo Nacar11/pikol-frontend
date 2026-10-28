@@ -49,6 +49,15 @@ test('book and pay', async ({ customerPage: page }) => {
 
   await expect(page.getByRole('heading', { name: 'Payment successful' })).toBeVisible();
   await expect(page.getByText('Paid bookings are final.')).toBeVisible();
+
+  // The tracker, newest first, as the customer sees it.
+  const steps = page.getByRole('list', { name: 'Action events' }).getByRole('listitem');
+  await expect(steps).toHaveCount(4);
+  await expect(steps.nth(0)).toContainText('Booking confirmed');
+  await expect(steps.nth(1)).toContainText('Payment successful');
+  await expect(steps.nth(2)).toContainText('Payment started');
+  await expect(steps.nth(3)).toContainText('Hours held');
+  await expect(steps.nth(3)).toContainText('You');
 });
 
 test('two customers race for one hour', async ({ customerPage: page, rivalPage: rival }) => {

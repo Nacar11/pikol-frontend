@@ -1,4 +1,5 @@
 import { ApiClient, apiClient } from '@/lib/api-client';
+import { ActionEventPageSchema } from '@/features/bookings';
 import type { Page } from '@/lib/page';
 import { CheckoutPageSchema, CheckoutSchema, type Checkout, type CheckoutItem } from './schemas';
 
@@ -17,6 +18,10 @@ export const checkoutApi = {
   },
   get(id: number, client: ApiClient = apiClient()): Promise<Checkout> {
     return client.get<unknown>(`${BASE}/${id}`).then((r) => CheckoutSchema.parse(r));
+  },
+  /** The tracker: this payment's events, without staff names. */
+  events(id: number, client: ApiClient = apiClient()) {
+    return client.get<unknown>(`${BASE}/${id}/events`).then((r) => ActionEventPageSchema.parse(r));
   },
   /** Continue to Maya: the same session on every call. */
   pay(id: number, client: ApiClient = apiClient()): Promise<Checkout> {

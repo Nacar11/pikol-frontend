@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ActionEventPageSchema } from '@/features/bookings';
 import { ApiClient, apiClient } from '@/lib/api-client';
 import {
   AdminBookingPageSchema,
@@ -44,6 +45,13 @@ export const adminBookingsApi = {
 
   get(id: number, client: ApiClient = apiClient()): Promise<AdminBooking> {
     return client.get<unknown>(`/admin/bookings/${id}`).then((r) => AdminBookingSchema.parse(r));
+  },
+
+  /** What happened to it, newest first, with staff names. */
+  events(id: number, client: ApiClient = apiClient()) {
+    return client
+      .get<unknown>(`/admin/bookings/${id}/events`)
+      .then((r) => ActionEventPageSchema.parse(r));
   },
 
   walkIn(req: WalkInRequest, client: ApiClient = apiClient()): Promise<AdminBooking> {

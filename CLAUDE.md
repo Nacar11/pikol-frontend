@@ -44,7 +44,7 @@ the app's flow, kept in the console's black-and-white system, not a storefront.
 | `catalog` | the venue list (`GET /venues`, `useVenues`) and the per-venue court list (`GET /venues/{id}/courts`) |
 | `booking` | the customer demo: `picks.ts` (pure — toggle, merge into items, the server's half-up fee), checkout API and hooks, `CustomerGate`, `CustomerShell`, venue cards, the courts × hours grid and pick bar, the hold page, the result page (polls 3 s for 2 min, then "Check again"), My bookings |
 | `availability` | the day availability read and the slot-selection reducer |
-| `bookings` | the booking schema and `StatusBadge`, reused by the console |
+| `bookings` | the booking schema and `StatusBadge`, reused by the console; **`ActionTimeline`** and the action-event schema (`action-events.ts`: one `EVENT_LOOK` per type — title, chip word, tone, icon — and `eventDetail`), shown on `/staff/bookings/{id}` (`GET /admin/bookings/{id}/events`) and on the customer result page (`GET /checkouts/me/{id}/events`, refetched whenever the polled checkout changes) |
 | `admin-bookings` | the Schedule (header, two-week strip, court grid, day-at-a-glance), the occupancy read, booking actions, the resolution queue |
 | `staff` | `StaffShell` (the sidebar — navigation only), `StaffNavbar` (the top bar: the profile menu — who is signed in, and **Sign out** inside it; the mobile menu button), `StaffOnly`, `StaffGate`, `StaffVenueSync`, `useStaffVenue`, `VenueRequired`, `VenueSwitcher`, `STAFF_LINKS` |
 | `setup` | venues, courts, price rules and the price preview, closures; `useCourtSummaries` / `useVenueSummaries` (one request per page for the cards' stats) |
@@ -91,7 +91,9 @@ when it changes, permissions included.
 - **Black and white.** Tokens in `globals.css` are neutral; `destructive` is
   the one hue, for errors and destructive actions only. Status is shape plus
   a text label, never colour alone (`bg-hatch` is the one sanctioned pattern,
-  for a closed court-hour).
+  for a closed court-hour). **One exception:** the action-events timeline
+  colours each step (`--event-wait/-confirmed/-done/-bad/-neutral`, user's
+  choice, design 2026-10-28) — and still carries a word and an icon on each.
 - **All times render in Asia/Manila**, never browser-local (spec §8.2).
 - **Slot selection is never optimistic** — a 409 on a busy evening is an
   expected outcome (spec §8.2). Tap → server → then held. On the customer

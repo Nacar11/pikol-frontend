@@ -6,13 +6,15 @@ import { Alert } from '@/components/ui/alert';
 import { type Confirmation, ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { PageLoading } from '@/components/ui/page-loading';
 import { usePermissions } from '@/features/auth';
-import { StatusBadge } from '@/features/bookings';
+import { ActionTimeline, StatusBadge } from '@/features/bookings';
+import { SectionLabel } from '@/components/ui/section-label';
 import { errorCode, errorMessage } from '@/lib/api-error';
 import { formatDayLong, formatHour, formatTimeRange, manilaDayOf } from '@/lib/manila';
 import { formatPeso } from '@/lib/money';
 import {
   type StaffActionRequest,
   useAdminBooking,
+  useAdminBookingEvents,
   useStaffAction,
 } from '../hooks/use-admin-booking';
 import type { AdminBooking } from '../schemas';
@@ -81,6 +83,7 @@ export function AdminBookingDetail({ id }: { id: number }) {
         <StatusBadge status={booking.display_status} payment={booking.payment_status} />
       </div>
       <Summary booking={booking} />
+      <Events id={id} />
       {action.isError && <Alert tone="error">{errorMessage(action.error)}</Alert>}
       {allowed.has('markPaid') && (
         <MarkPaidForm
@@ -121,6 +124,27 @@ export function AdminBookingDetail({ id }: { id: number }) {
           if (asked) action.mutate(asked, { onSettled: () => setAsked(null) });
         }}
       />
+    </section>
+  );
+}
+
+function Events({ id }: { id: number }) {
+  const events = useAdminBookingEvents(id);
+  return (
+    <section
+      aria-labelledby="action-events"
+      className="space-y-3 rounded border border-border bg-surface p-4"
+    >
+      <SectionLabel as="h2" id="action-events">
+        Action events
+      </SectionLabel>
+      {events.isPending ? (
+        <p className="text-sm text-muted-foreground">Loading…</p>
+      ) : events.isError ? (
+        <p className="text-sm text-destructive">{errorMessage(events.error)}</p>
+      ) : (
+        <ActionTimeline events={events.data.data} showCourt={false} />
+      )}
     </section>
   );
 }

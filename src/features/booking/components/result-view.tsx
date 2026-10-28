@@ -6,7 +6,14 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { notify } from '@/components/ui/snackbar';
 import { errorMessage } from '@/lib/api-error';
-import { confirming, useCheckout, useRefreshPayment } from '../hooks/use-checkouts';
+import { ActionTimeline } from '@/features/bookings';
+import { SectionLabel } from '@/components/ui/section-label';
+import {
+  confirming,
+  useCheckout,
+  useCheckoutEvents,
+  useRefreshPayment,
+} from '../hooks/use-checkouts';
 import type { Checkout } from '../schemas';
 import { CheckoutLines } from './checkout-lines';
 import { StatusPill } from './status-pill';
@@ -44,6 +51,7 @@ function copy(c: Checkout): { heading: string; line: string } {
  * The redirect proves nothing (ADR 0004): the status shown is the server's. */
 export function ResultView({ id }: { id: number }) {
   const checkout = useCheckout(id, { poll: true });
+  const events = useCheckoutEvents(id, checkout.data);
   const refresh = useRefreshPayment();
 
   // Ask Maya once on arrival: if every webhook was missed, this is the only
@@ -85,6 +93,17 @@ export function ResultView({ id }: { id: number }) {
       <div className="rounded border border-border bg-surface p-4">
         <CheckoutLines checkout={c} />
       </div>
+      {events.data && (
+        <section
+          aria-labelledby="action-events"
+          className="space-y-3 rounded border border-border bg-surface p-4"
+        >
+          <SectionLabel as="h2" id="action-events">
+            What happened
+          </SectionLabel>
+          <ActionTimeline events={events.data.data} showCourt={c.bookings.length > 1} />
+        </section>
+      )}
       <div className="flex flex-col gap-2">
         {waiting && (
           <Button
