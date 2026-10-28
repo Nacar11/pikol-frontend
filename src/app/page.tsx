@@ -15,7 +15,7 @@ export default function RootPage() {
   useEffect(() => {
     if (status === 'unauthenticated') router.replace('/login');
     else if (status === 'authenticated' && user && permissions.data) {
-      router.replace(landingPath(permissions.data, user.is_customer));
+      router.replace(landingPath(permissions.data));
     }
   }, [status, user, permissions.data, router]);
 

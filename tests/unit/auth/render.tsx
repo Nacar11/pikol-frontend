@@ -9,13 +9,17 @@ let searchParams = new URLSearchParams();
 export function setSearch(query: string) {
   searchParams = new URLSearchParams(query);
 }
+let pathname = '/';
+export function setPathname(path: string) {
+  pathname = path;
+}
 
 /** For a test file's `vi.mock('next/navigation', ...)` — vi.mock is only
  * hoisted in test files, so the mock itself cannot live here. */
 export const navigationMock = {
   useRouter: () => router,
   useSearchParams: () => searchParams,
-  usePathname: () => '/',
+  usePathname: () => pathname,
 };
 
 export function renderWithAuth(ui: React.ReactElement, auth: Partial<AuthContextValue> = {}) {

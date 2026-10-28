@@ -9,6 +9,7 @@ import { Alert } from '@/components/ui/alert';
 import { PageLoading } from '@/components/ui/page-loading';
 import { errorMessage } from '@/lib/api-error';
 import { useVerifyEmail } from '../hooks/use-auth-mutations';
+import { CUSTOMER_LOGIN } from '../landing';
 import { ResendVerification } from './resend-verification';
 
 export function VerifyEmail() {
@@ -33,7 +34,7 @@ export function VerifyEmail() {
         <h1 className="text-xl font-semibold tracking-tight">Email verified</h1>
         <p className="text-sm text-muted-foreground">Your account is active. Sign in to book.</p>
         <Link
-          href="/login"
+          href={CUSTOMER_LOGIN}
           className="inline-flex h-10 items-center rounded bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90"
         >
           Sign in

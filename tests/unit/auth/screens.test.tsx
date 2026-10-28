@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { authApi } from '@/features/auth/api';
@@ -50,28 +50,30 @@ async function fillLogin(email = 'jane@x.com', password = 'correct-horse-1') {
 }
 
 describe('LoginForm', () => {
-  it('signs in and lands staff who are not customers on the console', async () => {
+  it('signs in at the staff door and lands on the console', async () => {
     const login = vi.fn(async () => ({ ...USER, is_customer: false }));
-    api.permissions.mockResolvedValue(['BOOKING:ReadAny']);
-    renderWithAuth(<LoginForm />, { login });
+    renderWithAuth(<LoginForm portal="staff" />, { login });
 
     await fillLogin();
 
     await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/staff/schedule'));
-    expect(login).toHaveBeenCalledWith({ email: 'jane@x.com', password: 'correct-horse-1' });
+    expect(login).toHaveBeenCalledWith(
+      { email: 'jane@x.com', password: 'correct-horse-1' },
+      'staff',
+    );
   });
 
-  it('lands a customer on the booking home, even one who is also staff', async () => {
-    api.permissions.mockResolvedValue(['BOOKING:ReadAny']);
-    renderWithAuth(<LoginForm />, { login: vi.fn(async () => USER) });
+  it('signs in at the customer door and lands on the booking home', async () => {
+    const login = vi.fn(async () => USER);
+    renderWithAuth(<LoginForm portal="customer" />, { login });
 
     await fillLogin();
 
     await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/book'));
+    expect(login).toHaveBeenCalledWith(expect.anything(), 'customer');
   });
 
   it('returns to a safe ?next= path, but never off-site', async () => {
-    api.permissions.mockResolvedValue([]);
     setSearch('next=/staff/courts');
     const { unmount } = renderWithAuth(<LoginForm />, { login: vi.fn(async () => USER) });
     await fillLogin();
@@ -82,8 +84,28 @@ describe('LoginForm', () => {
     setSearch('next=//evil.example');
     renderWithAuth(<LoginForm />, { login: vi.fn(async () => USER) });
     await fillLogin();
-    await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/book'));
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/staff/schedule'));
   });
+
+  it.each([
+    ['customer', 'NOT_A_CUSTOMER', 'This sign-in is for customers only.', '/login'],
+    ['staff', 'NOT_STAFF', 'This sign-in is for venue staff.', '/customer-login-demo'],
+  ] as const)(
+    'a refusal at the %s door points at the other one',
+    async (portal, code, detail, href) => {
+      const login = vi.fn(async () => {
+        throw new ApiError(403, { detail, code });
+      });
+      renderWithAuth(<LoginForm portal={portal} />, { login });
+
+      await fillLogin();
+
+      const alert = await screen.findByRole('alert');
+      expect(alert).toHaveTextContent(detail);
+      expect(within(alert).getByRole('link')).toHaveAttribute('href', href);
+      expect(router.replace).not.toHaveBeenCalled();
+    },
+  );
 
   it("shows the backend's message on bad credentials", async () => {
     const login = vi.fn(async () => {

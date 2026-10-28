@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/features/auth';
+import { CUSTOMER_LOGIN, useAuth } from '@/features/auth';
 
 export function SignOutButton({ variant = 'ghost' }: { variant?: 'ghost' | 'secondary' }) {
   const { logout } = useAuth();
@@ -13,7 +13,7 @@ export function SignOutButton({ variant = 'ghost' }: { variant?: 'ghost' | 'seco
       size="sm"
       onClick={async () => {
         await logout();
-        router.replace('/login');
+        router.replace(CUSTOMER_LOGIN);
       }}
     >
       Sign out

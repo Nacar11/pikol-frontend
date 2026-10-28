@@ -4,7 +4,7 @@ const API = 'http://localhost:8100/api/v1';
 const PASSWORD = 'E2e-password-1';
 const OWNER = { email: 'owner.e2e@example.com', password: PASSWORD };
 export const DESK = { email: 'desk.e2e@example.com', password: PASSWORD };
-const CUSTOMER1 = { email: 'customer1.e2e@example.com', password: PASSWORD };
+export const CUSTOMER1 = { email: 'customer1.e2e@example.com', password: PASSWORD };
 const CUSTOMER2 = { email: 'customer2.e2e@example.com', password: PASSWORD };
 
 /** A fresh session per test. Refresh tokens rotate and a reused one revokes

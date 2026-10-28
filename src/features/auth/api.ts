@@ -20,6 +20,14 @@ export const authApi = {
       .then((r) => TokenPairSchema.parse(r));
   },
 
+  /** The customer demo's door: 403 NOT_A_CUSTOMER, and no tokens, for an
+   * account outside the Customer group. */
+  customerLogin(input: LoginInput, client: ApiClient = apiClient()): Promise<TokenPair> {
+    return client
+      .post<unknown>('/auth/customer-login', input, { skipRefresh: true })
+      .then((r) => TokenPairSchema.parse(r));
+  },
+
   /** ROTATES the token: the one passed in dies. Call only from AuthProvider. */
   refresh(refreshToken: string, client: ApiClient = apiClient()): Promise<TokenPair> {
     return client

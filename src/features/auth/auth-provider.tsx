@@ -3,8 +3,10 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { createContext, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { notify } from '@/components/ui/snackbar';
-import { apiClient } from '@/lib/api-client';
+import { ApiError, apiClient } from '@/lib/api-client';
 import { authApi } from './api';
+import { authKeys } from './keys';
+import { isStaff } from './landing';
 import type { AuthUser, LoginInput, TokenPair } from './schemas';
 
 /** @internal Exported for tests. */
@@ -13,10 +15,14 @@ const REFRESH_LOCK = 'pikol:refresh';
 
 export type AuthStatus = 'loading' | 'unauthenticated' | 'authenticated';
 
+/** Which door the sign-in came through: `/login` (the staff console) or
+ * `/customer-login-demo` (the booking demo). */
+export type Portal = 'staff' | 'customer';
+
 export type AuthContextValue = {
   status: AuthStatus;
   user: AuthUser | null;
-  login: (input: LoginInput) => Promise<AuthUser>;
+  login: (input: LoginInput, portal: Portal) => Promise<AuthUser>;
   logout: () => Promise<void>;
 };
 
@@ -118,9 +124,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .catch(() => signedOut(true));
   }, [signedIn, signedOut]);
 
+  /** The server refuses non-customers at the customer door. The staff door is
+   * checked here, BEFORE anything is stored or `authenticated` is set:
+   * GuestGate redirects on `authenticated`, and would send a refused customer
+   * to /book before this could undo it. A UX door, not a security boundary —
+   * the console is permission-guarded on the server. */
   const login = useCallback(
-    async (input: LoginInput) => signedIn(await authApi.login(input)),
-    [signedIn],
+    async (input: LoginInput, portal: Portal) => {
+      if (portal === 'customer') return signedIn(await authApi.customerLogin(input));
+      const pair = await authApi.login(input);
+      apiClient().setAccessToken(pair.access_token);
+      // Revokes the refresh token we never stored.
+      const discard = async () => {
+        await authApi.logout().catch(() => undefined);
+        apiClient().setAccessToken(null);
+        queryClient.clear();
+      };
+      let permissions: string[];
+      try {
+        permissions = await queryClient.fetchQuery({
+          queryKey: authKeys.permissions(),
+          queryFn: () => authApi.permissions(),
+        });
+      } catch (err) {
+        await discard();
+        throw err;
+      }
+      if (!isStaff(permissions)) {
+        await discard();
+        throw new ApiError(403, { code: 'NOT_STAFF', detail: 'This sign-in is for venue staff.' });
+      }
+      return signedIn(pair);
+    },
+    [signedIn, queryClient],
   );
 
   const logout = useCallback(async () => {

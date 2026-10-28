@@ -3,10 +3,12 @@
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { PageLoading } from '@/components/ui/page-loading';
+import { loginPathFor } from '../landing';
 import { useAuth } from '../use-auth';
 
 /** Wraps every (app) route: nothing renders until the session is known, and
- * a signed-out visitor goes to /login, remembering where they were headed. */
+ * a signed-out visitor goes to sign in — the booking demo at its own door —
+ * remembering where they were headed. */
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const { status } = useAuth();
   const router = useRouter();
@@ -14,7 +16,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (status === 'unauthenticated') {
-      router.replace(`/login?next=${encodeURIComponent(pathname)}`);
+      router.replace(loginPathFor(pathname));
     }
   }, [status, router, pathname]);
 

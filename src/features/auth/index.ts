@@ -1,14 +1,14 @@
 export { AuthProvider } from './auth-provider';
 export { AuthGate } from './components/auth-gate';
 export { GuestGate } from './components/guest-gate';
-export { isStaff, landingPath } from './landing';
+export { CUSTOMER_LOGIN, isStaff, landingPath } from './landing';
 export { GroupKindSchema, UserSchema } from './schemas';
 export type { User } from './schemas';
 export { useAuth } from './use-auth';
 export { usePermissions } from './use-permissions';
 export { AcceptInviteForm } from './components/accept-invite-form';
 export { ForgotPasswordForm } from './components/forgot-password-form';
-export { LoginForm } from './components/login-form';
+export { LoginForm, OtherDoor } from './components/login-form';
 export { ResetPasswordForm } from './components/reset-password-form';
 export { VerifyEmail } from './components/verify-email';
 export { RequirePermission } from './components/require-permission';

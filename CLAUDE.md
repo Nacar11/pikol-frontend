@@ -52,7 +52,8 @@ the app's flow, kept in the console's black-and-white system, not a storefront.
 | `groups` | user groups: Setup → Venue staff and Masters → User groups |
 | `parameters` | the owner's business-parameters screen |
 
-Routes: `/login`, `/forgot-password`, `/reset-password`, `/verify-email`,
+Routes: `/login` (the staff console's sign-in), `/customer-login-demo` (the
+booking demo's own sign-in — Customer-group accounts only), `/forgot-password`, `/reset-password`, `/verify-email`,
 `/accept-invite`; the customer pages `/book` (venue cards), `/book/[venueId]?date=`
 (grid), `/book/checkout/[id]` (hold page), `/book/result/[id]` (result — also
 Maya's redirect target for success, failure and cancel) and `/book/mine`; and
@@ -110,10 +111,22 @@ when it changes, permissions included.
   concurrent 401s into one refresh call. Never call `authApi.refresh` from
   anywhere but `AuthProvider`.
 - Login returns tokens only; the provider then loads `GET /users/me`.
-- Landing (`landingPath(permissions, isCustomer)`): a customer → `/book`,
-  even one who is also staff; staff who are not customers → `/staff/schedule`;
-  anyone else → `/book`, where `CustomerGate` says the account cannot book.
-  `StaffOnly` sends non-staff to `/book`.
+- **Two doors** (`../docs/plans/2026-10-28-customer-login-demo-design.md`).
+  `/customer-login-demo` calls `POST /auth/customer-login`, which refuses a
+  non-customer (`NOT_A_CUSTOMER`) before any token exists; a dual staff +
+  customer account gets in and lands on `/book`. `/login` is the staff door:
+  `AuthProvider.login(input, 'staff')` refuses a non-staff account
+  (`NOT_STAFF`) **before** storing anything or setting `authenticated` —
+  `GuestGate` redirects on `authenticated` and would beat the refusal. Each
+  refusal links to the other door (`OtherDoor`).
+- Signed out on `/book*` → `/customer-login-demo?next=…`, anywhere else →
+  `/login?next=…` (`loginPathFor`); the booking shell signs out to the demo
+  door. `GuestGate` and `LoginForm` both redirect after sign-in and race, so
+  both honour a safe `?next=` first.
+- Landing otherwise (`landingPath(permissions)`, for `/` and `GuestGate`):
+  staff, dual accounts included → `/staff/schedule`; anyone else → `/book`,
+  where `CustomerGate` speaks for an account that cannot book. `StaffOnly`
+  sends non-staff to `/book`.
 
 ## Env
 

@@ -9,23 +9,30 @@ import { Field } from '@/components/form/field';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { errorCode, errorMessage } from '@/lib/api-error';
-import { useFetchPermissions } from '../hooks/use-auth-mutations';
-import { landingPath } from '../landing';
+import type { Portal } from '../auth-provider';
+import { CUSTOMER_LOGIN, safeNext } from '../landing';
 import { LoginInputSchema, type LoginInput } from '../schemas';
 import { useAuth } from '../use-auth';
 import { ResendVerification } from './resend-verification';
 
-/** Only same-site paths: `//evil.example` is protocol-relative, not local. */
-function safeNext(next: string | null): string | null {
-  return next && next.startsWith('/') && !next.startsWith('//') ? next : null;
-}
+/** Each door lands on its own side, and a refusal points at the other one. */
+const DOORS = {
+  staff: { home: '/staff/schedule', refused: 'NOT_STAFF' },
+  customer: { home: '/book', refused: 'NOT_A_CUSTOMER' },
+} as const;
 
-export function LoginForm() {
+const OTHER_DOOR = {
+  staff: { href: CUSTOMER_LOGIN, label: 'Customers sign in to the booking demo here' },
+  customer: { href: '/login', label: 'Venue staff sign in here' },
+} as const;
+
+type Failure = { message: string; unverified: boolean; wrongDoor: boolean };
+
+export function LoginForm({ portal = 'staff' }: { portal?: Portal }) {
   const { login } = useAuth();
-  const fetchPermissions = useFetchPermissions();
   const router = useRouter();
   const next = safeNext(useSearchParams().get('next'));
-  const [failure, setFailure] = useState<{ message: string; unverified: boolean } | null>(null);
+  const [failure, setFailure] = useState<Failure | null>(null);
   const {
     register,
     handleSubmit,
@@ -36,12 +43,13 @@ export function LoginForm() {
   const onSubmit = handleSubmit(async (input) => {
     setFailure(null);
     try {
-      const user = await login(input);
-      router.replace(next ?? landingPath(await fetchPermissions(), user.is_customer));
+      await login(input, portal);
+      router.replace(next ?? DOORS[portal].home);
     } catch (err) {
       setFailure({
         message: errorMessage(err, 'Could not sign in. Please try again.'),
         unverified: errorCode(err) === 'EMAIL_NOT_VERIFIED',
+        wrongDoor: errorCode(err) === DOORS[portal].refused,
       });
     }
   });
@@ -52,6 +60,7 @@ export function LoginForm() {
         <Alert tone="error">
           <p>{failure.message}</p>
           {failure.unverified && <ResendVerification email={getValues('email')} />}
+          {failure.wrongDoor && <OtherDoor portal={portal} />}
         </Alert>
       )}
       <Field
@@ -77,5 +86,15 @@ export function LoginForm() {
         Sign in
       </Button>
     </form>
+  );
+}
+
+/** The link to the other sign-in page, under a refusal and at a page's foot. */
+export function OtherDoor({ portal }: { portal: Portal }) {
+  const door = OTHER_DOOR[portal];
+  return (
+    <Link href={door.href} className="text-sm text-primary hover:underline">
+      {door.label}
+    </Link>
   );
 }

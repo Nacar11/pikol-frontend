@@ -1,8 +1,7 @@
 'use client';
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { authApi } from '../api';
-import { authKeys } from '../keys';
 
 // Every auth write, as named hooks: components never call api.ts directly.
 
@@ -26,14 +25,3 @@ export const useAcceptInvitation = () =>
     mutationFn: ({ token, password }: { token: string; password: string }) =>
       authApi.acceptInvitation(token, password),
   });
-
-/** Fetch (and cache) the signed-in user's permissions — for landing right
- * after login, before any component has asked for them. */
-export function useFetchPermissions() {
-  const queryClient = useQueryClient();
-  return () =>
-    queryClient.fetchQuery({
-      queryKey: authKeys.permissions(),
-      queryFn: () => authApi.permissions(),
-    });
-}
