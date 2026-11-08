@@ -1,10 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { landingPath } from '@/features/auth';
+import { isStaff, landingPath } from '@/features/auth';
 import { loginPathFor } from '@/features/auth/landing';
 
 describe('landingPath', () => {
   it('sends staff to the console, even staff who are also customers', () => {
     expect(landingPath(['CLOSURE:Manage', 'BOOKING:ReadAny'])).toBe('/staff/schedule');
+  });
+
+  it('sends staff without the schedule to the first page they can open', () => {
+    expect(landingPath(['USER:Manage'])).toBe('/staff/venue-staff');
+    expect(landingPath(['CLOSURE:Manage'])).toBe('/staff/closures');
   });
 
   it('sends anyone else to /book, which explains if they cannot book', () => {
@@ -21,5 +26,13 @@ describe('loginPathFor', () => {
   it('sends everything else to the staff door', () => {
     expect(loginPathFor('/staff/courts')).toBe('/login?next=%2Fstaff%2Fcourts');
     expect(loginPathFor('/bookings')).toBe('/login?next=%2Fbookings');
+  });
+});
+
+describe('isStaff', () => {
+  it('is anyone who can open a console page, not only the schedule', () => {
+    expect(isStaff(['USER:Manage'])).toBe(true);
+    expect(isStaff(['BOOKING:ReadAny'])).toBe(true);
+    expect(isStaff([])).toBe(false);
   });
 });

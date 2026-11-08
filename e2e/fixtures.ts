@@ -4,6 +4,8 @@ const API = 'http://localhost:8100/api/v1';
 const PASSWORD = 'E2e-password-1';
 const OWNER = { email: 'owner.e2e@example.com', password: PASSWORD };
 export const DESK = { email: 'desk.e2e@example.com', password: PASSWORD };
+/** USER:Manage at E2E Riverside and nothing else (the e2e seed). */
+const LEAD = { email: 'lead.e2e@example.com', password: PASSWORD };
 export const CUSTOMER1 = { email: 'customer1.e2e@example.com', password: PASSWORD };
 const CUSTOMER2 = { email: 'customer2.e2e@example.com', password: PASSWORD };
 
@@ -26,6 +28,7 @@ async function signIn(page: Page, request: APIRequestContext, who: typeof OWNER)
 export const test = base.extend<{
   ownerPage: Page;
   deskPage: Page;
+  leadPage: Page;
   customerPage: Page;
   rivalPage: Page;
 }>({
@@ -35,6 +38,10 @@ export const test = base.extend<{
   },
   deskPage: async ({ page, request }, use) => {
     await signIn(page, request, DESK);
+    await use(page);
+  },
+  leadPage: async ({ page, request }, use) => {
+    await signIn(page, request, LEAD);
     await use(page);
   },
   customerPage: async ({ page, request }, use) => {
